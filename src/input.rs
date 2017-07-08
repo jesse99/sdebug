@@ -60,9 +60,14 @@ fn process_line(line: &str, commands: &Commands)
 		} else {
 			// We failed to find a command that matched what the user typed
 			// so check for some common error cases.
-			let mut matches = find_longer_commands(&args, commands);
+			let mut matches = find_longer_commands(&args, commands);	// user typed "get:
 			if matches.is_empty() {
-				matches = find_shorter_commands(&args, commands);
+				matches = find_shorter_commands(&args, commands);		// user typed "get log all hmm"
+			}
+			if matches.is_empty() && args.len() > 1 {
+				if let Some((_, prefix)) = args.split_last() {			// user typed "get log oops"
+					matches = find_longer_commands(&prefix.to_vec(), commands);
+				}
 			}
 			if matches.len() > 0 {
 				println!("Did you mean:"); 	// TODO: use red?
@@ -70,7 +75,7 @@ fn process_line(line: &str, commands: &Commands)
 					println!("   {}", m);
 				}
 			} else {
-				print!("failed to find a matching command\n");
+				print!("Failed to find a matching command.\n");
 			}
 		}
 	}
@@ -135,6 +140,7 @@ fn arg_matches(args: &Vec<&str>, command: &Vec<&str>, index: usize) -> bool
 	}
 }
 
+// These are structured as verb target [options].
 fn init_commands() -> Commands
 {
 	vec!(
