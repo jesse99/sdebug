@@ -6,7 +6,7 @@ use std::env;
 
 type Handler = fn (&Vec<&str>) -> ();
 
-type Commands = Vec<(Vec<&'static str>, Handler)>;
+type Commands = Vec<(Vec<&'static str>, Handler, &'static str)>;
 
 pub fn read_lines()
 {
@@ -26,7 +26,9 @@ pub fn read_lines()
 					"quit" | "exit" => {
 						break;
 					},
-					// TODO: need to support help and ?
+					"help" | "?" => {
+						print_help(&commands);
+					},
 					_ => {
 						editor.add_history_entry(&line);	// even if there is an error, it's nice to have it in the history so that the user can easily repair it
 						process_line(&line, &commands);
@@ -120,6 +122,10 @@ fn command_matches(args: &Vec<&str>, command: &Vec<&str>) -> bool
 		.all(|(i, _)| arg_matches(args, command, i))
 }
 
+// duration (can be negative)
+// number
+// path
+// value (string, int, float)
 fn arg_matches(args: &Vec<&str>, command: &Vec<&str>, index: usize) -> bool
 {
 	if index < args.len() && index < command.len() {
@@ -132,22 +138,43 @@ fn arg_matches(args: &Vec<&str>, command: &Vec<&str>, index: usize) -> bool
 fn init_commands() -> Commands
 {
 	vec!(
-		(vec!("get",    "log",  "all"),    get_log_all),
-		(vec!("goober", "log",  "all"),    get_log_all),
-		(vec!("set",    "time", "<secs>"), set_time_secs)
+		(vec!("get", "log",  "all"),        get_log_all,   "print the entire log"),
+		(vec!("get", "log",  "<number>"),   get_log_n,     "print the last N log lines"),
+		(vec!("set", "time", "<duration>"), set_time_secs, "advance or rollback sim time")
 	)
 }
 
-// get log all
-fn get_log_all(args: &Vec<&str>)
+fn print_help(commands: &Commands)
 {
-	println!("get: {:?}", args);
+	println!("The commands are:");
+	let biggest = commands.iter().max_by(|x, y| x.0.join(" ").len().cmp(&y.0.join(" ").len())).unwrap();
+	let max_len = biggest.0.join(" ").len();
+	for command in commands {
+		println!("   {:<width$} {}", command.0.join(" "), command.2, width = max_len+2);
+	}
+	println!("Arguments in <angle brackets> are required. Arguments in [square brackets] are optional.");
+	println!("");
+	println!("Durations are floating point numbers with a us, ms, s, m, or h suffix.");
+	println!("Numbers are integer values.");
+	println!("Paths are component paths, e.g. bob.heart.right-ventricle. Paths may be globbed.");
+	println!("Values are ints, floats (decimal point is required), or an arbitrary string.");
+}
+
+// get log all
+fn get_log_all(_: &Vec<&str>)
+{
+	println!("your log here");
+}
+
+fn get_log_n(_: &Vec<&str>)
+{
+	println!("your truncated log here");
 }
 
 // set time secs
 fn set_time_secs(args: &Vec<&str>)
 {
-	println!("set: {:?}", args);
+	println!("set time {:?}", args);
 }
 
 fn get_history_path() -> String
