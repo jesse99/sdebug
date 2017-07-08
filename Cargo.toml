@@ -10,3 +10,4 @@ license = "GPL-3.0"
 
 [dependencies]
 clap = "2.24.0"			# pretty nifty command line parser
+rustyline = "1.0.0"		# command line editing, tab completion, etc

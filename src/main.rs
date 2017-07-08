@@ -3,7 +3,12 @@
 #[macro_use]
 extern crate clap;
 
+extern crate rustyline;
+
+pub mod input;
+
 use clap::{App, ArgMatches};
+use input::*;
 use std::fmt::Display;
 use std::io::{Write, stderr};
 use std::process;
@@ -77,4 +82,5 @@ fn main()
 {
 	let config = parse_options();
 	println!("address = {}:{}", config.server, config.port);
+	read_lines();
 }
