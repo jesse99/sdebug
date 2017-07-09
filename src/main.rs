@@ -7,18 +7,18 @@ extern crate crest;
 extern crate rustyline;
 extern crate serde;
 
+mod helpers;
 mod input;
 mod parse;
 mod time;
 
 use clap::{App, ArgMatches};
 use crest::prelude::*;
+use helpers::*;
 use input::*;
 use std::fmt::Display;
-use std::io::{Write, stderr};
-use std::process;
 use std::str::FromStr;
-use time::get_time_label;
+use time::*;
 
 struct Config
 {
@@ -36,12 +36,6 @@ impl Config
 			port: 9000,
 		}
 	}
-}
-
-fn fatal_err(message: &str) -> !
-{
-	let _ = writeln!(&mut stderr(), "{}", message);
-	process::exit(1);
 }
 
 // Min and max are inclusive.
@@ -62,8 +56,8 @@ fn parse_options() -> Config
 	
 	// see https://docs.rs/clap/2.24.2/clap/struct.Arg.html#method.from_usage for syntax
 	let usage = format!(
-		"--server=[ADDRESS] 'Address the score simulation bound to [{default_server}]'
-		--port=[NUM] 'Port the score simulation bound to [{default_port}]'",
+		"--server=[ADDRESS] 'Address the score simulation is bound to [{default_server}]'
+		--port=[NUM] 'Port the score simulation is bound to [{default_port}]'",
 		default_server = config.server,
 		default_port = config.port);
 	
@@ -89,7 +83,7 @@ fn main()
 	let config = parse_options();
 	let url = format!("http://{}:{}/", config.server, config.port);
 	match Endpoint::new(&url) {
-		Ok(endpoint) => {get_time_label(&endpoint); read_lines(endpoint);},	// get_time_label preflights the endpoint
+		Ok(endpoint) => {get_time(&endpoint); read_lines(endpoint);},	// get_time preflights the endpoint
 		Err(err) => println!("error connecting to {}: {}", url, err),
 	}
 }

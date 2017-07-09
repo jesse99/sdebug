@@ -1,23 +1,17 @@
 //! REST commands related to time.
-use crest::error::Result;
 use crest::prelude::*;
-use serde;
-use std::process;
+use helpers::*;
 
-// TODO: comment
-pub fn get_time_label(endpoint: &Endpoint) -> String
+/// Returns the current simulation time in seconds.
+pub fn get_time(endpoint: &Endpoint) -> f64
 {
-	match get_rest::<String>(endpoint, &["time", "label"]) {
-		Ok(result) => result,
-		Err(err) => {println!("{}", err); process::exit(1);}
-	}
+	get_rest::<f64>(endpoint, &["time"])
 }
 
-pub fn get_rest<T>(endpoint: &Endpoint, path: &[&str]) -> Result<T>
-	where T: for <'de> serde::Deserialize<'de>
+/// Returns the number of significant decimal places in simulation
+/// times, e.g. if the sim is tracking time to the ms then this will
+/// return 3.
+pub fn get_time_precision(endpoint: &Endpoint) -> usize
 {
-	let request = try!(endpoint.get(path));
-	let response = try!(request.send());
-	let data = try!(response.into::<T>());
-	Ok(data)
+	get_rest::<usize>(endpoint, &["time", "precision"])
 }

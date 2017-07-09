@@ -7,7 +7,7 @@ use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::env;
 use std::u64;
-use time::get_time_label;
+use time::*;
 //use std::str::FromStr;
 
 type Handler = fn (&Vec<String>) -> ();
@@ -283,8 +283,11 @@ fn get_history_path() -> String
 
 fn get_prompt(endpoint: &Endpoint) -> String
 {
+	let time = get_time(endpoint);
+	let precision = get_time_precision(endpoint);
+	let prompt = format!("{:.1$}", time, precision);
+
 	let prefix = "\x1b[34;1m";	// bright blue, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-	let prompt = get_time_label(endpoint);
 	let suffix = "\x1b[0m";
 	format!("{}{}> {}", prefix, prompt, suffix)
 }
