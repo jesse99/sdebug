@@ -5,7 +5,8 @@ extern crate clap;
 
 extern crate rustyline;
 
-pub mod input;
+mod input;
+mod parse;
 
 use clap::{App, ArgMatches};
 use input::*;
