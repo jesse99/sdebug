@@ -47,6 +47,9 @@ pub fn tokenize(text: &str) -> Result<Vec<String>, String>
 	// The input module can't distinguish between stuff like "hello" and hello
 	// but that just means that users can sometimes omit quotes which isn't
 	// so bad and does mirror what shells do.
+	//
+	// Although users can also type stuff like "get 'log' all" which is a bit
+	// more obnoxious.
 	if quote.is_some() {
 		Err(format!("Un-terminated {}", quote.unwrap()))
 	} else {
