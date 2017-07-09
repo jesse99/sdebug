@@ -3,17 +3,22 @@
 #[macro_use]
 extern crate clap;
 
+extern crate crest;
 extern crate rustyline;
+extern crate serde;
 
 mod input;
 mod parse;
+mod time;
 
 use clap::{App, ArgMatches};
+use crest::prelude::*;
 use input::*;
 use std::fmt::Display;
 use std::io::{Write, stderr};
 use std::process;
 use std::str::FromStr;
+use time::get_time_label;
 
 struct Config
 {
@@ -82,6 +87,9 @@ fn parse_options() -> Config
 fn main()
 {
 	let config = parse_options();
-	println!("address = {}:{}", config.server, config.port);
-	read_lines();
+	let url = format!("http://{}:{}/", config.server, config.port);
+	match Endpoint::new(&url) {
+		Ok(endpoint) => {get_time_label(&endpoint); read_lines(endpoint);},	// get_time_label preflights the endpoint
+		Err(err) => println!("error connecting to {}: {}", url, err),
+	}
 }

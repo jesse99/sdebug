@@ -1,10 +1,13 @@
 //! Use linenoise (aka readline) to allow the user to enter in and edit
 //! a command line.
+//use crest::error::Result;
+use crest::prelude::*;
 use parse::*;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::env;
 use std::u64;
+use time::get_time_label;
 //use std::str::FromStr;
 
 type Handler = fn (&Vec<String>) -> ();
@@ -12,7 +15,7 @@ type Handler = fn (&Vec<String>) -> ();
 type Commands = Vec<(Vec<String>, Handler, &'static str)>;
 
 /// Use linenoise to read in lines typed by the user and process them.
-pub fn read_lines()
+pub fn read_lines(endpoint: Endpoint)
 {
 	let hpath = get_history_path();
 	let commands = init_commands();
@@ -22,8 +25,8 @@ pub fn read_lines()
 	if let Err(err) = editor.load_history(&hpath) {
 		println!("Error loading history: {}", err);
 	}
-	let prompt = get_prompt();
 	loop {
+		let prompt = get_prompt(&endpoint);
 		let readline = editor.readline(&prompt);
 		match readline {
 			Ok(line) => {
@@ -278,10 +281,10 @@ fn get_history_path() -> String
 	}
 }
 
-// TODO: include the current sim time
-fn get_prompt() -> String
+fn get_prompt(endpoint: &Endpoint) -> String
 {
 	let prefix = "\x1b[34;1m";	// bright blue, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+	let prompt = get_time_label(endpoint);
 	let suffix = "\x1b[0m";
-	prefix.to_string() + "0.000> " + suffix
+	format!("{}{}> {}", prefix, prompt, suffix)
 }

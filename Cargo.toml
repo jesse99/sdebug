@@ -10,4 +10,6 @@ license = "GPL-3.0"
 
 [dependencies]
 clap = "2.24.0"			# pretty nifty command line parser
+crest = "0.3.0"			# REST client
 rustyline = "1.0.0"		# command line editing, tab completion, etc
+serde = "1.0.0"			# json serialization
