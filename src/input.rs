@@ -4,11 +4,12 @@ use parse::*;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::env;
+use std::u64;
 //use std::str::FromStr;
 
 type Handler = fn (&Vec<String>) -> ();
 
-type Commands = Vec<(Vec<&'static str>, Handler, &'static str)>;
+type Commands = Vec<(Vec<String>, Handler, &'static str)>;
 
 /// Use linenoise to read in lines typed by the user and process them.
 pub fn read_lines()
@@ -21,12 +22,13 @@ pub fn read_lines()
 	if let Err(err) = editor.load_history(&hpath) {
 		println!("Error loading history: {}", err);
 	}
+	let prompt = get_prompt();
 	loop {
-		let readline = editor.readline("> ");
+		let readline = editor.readline(&prompt);
 		match readline {
 			Ok(line) => {
 				match line.as_ref() {
-					"quit" | "exit" => {
+					"quit" | "exit" | "q" => {	// if more hard-coded commands are added then also update print_help
 						break;
 					},
 					"help" | "?" => {
@@ -90,7 +92,7 @@ fn process_line(args: &Vec<String>, commands: &Commands)
 fn find_handler(args: &Vec<String>, commands: &Commands) -> Option<Handler>
 {
 	let handlers: Vec<Handler> = commands.iter()
-		.filter(|command| args_matches(args, &command.0) && (args.len() == command.0.len() || *command.0.last().unwrap() == "<value>"))
+		.filter(|command| args_matches(args, &command.0) && no_extra_args(args, &command.0))
 		.map(|command| command.1)
 		.collect();
 	if handlers.len() == 1 {
@@ -118,30 +120,39 @@ fn find_shorter_commands(args: &Vec<String>, commands: &Commands) -> Vec<String>
 		.collect()
 }
 
-fn args_matches(args: &Vec<String>, command: &Vec<&str>) -> bool
+fn args_matches(args: &Vec<String>, command: &Vec<String>) -> bool
 {
 	args.iter()
 		.enumerate()
 		.all(|(i, _)| arg_matches(args, command, i))
 }
 
-fn command_matches(args: &Vec<String>, command: &Vec<&str>) -> bool
+fn no_extra_args(args: &Vec<String>, command: &Vec<String>) -> bool
+{
+	args.len() == command.len() || (args.len()+1 == command.len() && command.last().unwrap().starts_with("["))
+}
+
+fn command_matches(args: &Vec<String>, command: &Vec<String>) -> bool
 {
 	command.iter()
 		.enumerate()
 		.all(|(i, _)| arg_matches(args, command, i))
 }
 
-fn arg_matches(args: &Vec<String>, command: &Vec<&str>, index: usize) -> bool
+fn arg_matches(args: &Vec<String>, command: &Vec<String>, index: usize) -> bool
 {
 	if index < args.len() && index < command.len() {
-		match command[index] {
+		match command[index].as_ref() {
 			"<duration>" => parse_duration(&args[index]).is_some(),
+			"[level]" => parse_level(&args[index]).is_some(),
 			"<number>" => parse_number(&args[index]).is_some(),
 			"<path>" => parse_path(&args[index]).is_some(),
 			"<value>" => true,	// TODO: handle strings
 			_ => args[index] == command[index]
 		}
+	} else if index == args.len() && args.len() == command.len() + 1 {
+		// Special case for optional last command and missing arg.
+		command.last().unwrap().starts_with("[")
 	} else {
 		false
 	}
@@ -151,17 +162,26 @@ fn arg_matches(args: &Vec<String>, command: &Vec<&str>, index: usize) -> bool
 fn init_commands() -> Commands
 {
 	vec!(
-		(vec!("get", "log"),                        get_log,        "print the entire log"),
-		(vec!("get", "log", "<path>"),              get_log_path,   "print the entire log for components"),
-		(vec!("get", "log", "<number>"),            get_log_n,      "print the last N log lines"),
-		(vec!("get", "log", "<path>", "<number>"),  get_log_path_n, "print the last N log lines for components"),
-		(vec!("get", "state"),                      get_state,      "print the store for the current time"),
-		(vec!("get", "state", "<path>"),            get_state_path, "print the store for the current time and components"),
-		(vec!("set", "state", "<path>", "<value>"), set_state,      "set state for the component (the path should include the state name)"),
-		(vec!("set", "time", "<duration>"),         set_time_secs,  "advance or rollback sim time")
+		(cmd("get log [level]"),                 get_log,        "print the logs for all components"),
+		(cmd("get log <path> [level]"),          get_log_path,   "   for components matching path"),
+		(cmd("get log <number> [level]"),        get_log_n,      "   last N lines"),
+		(cmd("get log <path> <number> [level]"), get_log_path_n, "   N lines for path"),
+		(cmd("get state"),                       get_state,      "print the store for the current time"),
+		(cmd("get state <path>"),                get_state_path, "   for components matching path"),
+		(cmd("set state <path> <value>"),        set_state,      "set state for the component (the path should include the state name)"),
+		(cmd("set time <duration>"),             set_time_secs,  "advance or rollback sim time")
 	)
 }
 
+fn cmd(text: &str) -> Vec<String>
+{
+	text.split_whitespace().map(|s| s.to_string()).collect()
+}
+
+//					"quit" | "exit" | "q" => {	// if more hard-coded commands are added then also update print_help
+//						break;
+//					},
+//					"help" | "?" => {
 fn print_help(commands: &Commands)
 {
 	println!("The commands are:");
@@ -170,41 +190,57 @@ fn print_help(commands: &Commands)
 	for command in commands {
 		println!("   {:<width$} {}", command.0.join(" "), command.2, width = max_len+2);
 	}
+	println!("");
+	println!("   exit | quit | q | ctrl-D          exit sdebug");
+	println!("   help | ?                          print this message");
 	
 	let units: Vec<&str> = UNITS.iter().map(|u| u.0).collect();
-	println!("Arguments in <angle brackets> are required. Arguments in [square brackets] are optional.");	// TODO: do we actually use the [optional] syntax?
+	println!("Arguments in <angle brackets> are required. Arguments in [square brackets] are optional.");
 	println!("");
 	println!("Durations are floating point numbers with a {} suffix.", units.join(", "));
+	println!("Level must be error, warning, info, debug, or excessive. It defaults to info.");
 	println!("Numbers are non-negative integer values.");
 	println!("Paths are component paths, e.g. bob.heart.right-ventricle. Paths may be globbed.");
 	println!("Values are ints, floats (decimal point is required), or strings.");
 	println!("Strings are quoted with ', \", or `. Escapes are not currently supported.");
 }
 
-// get log
-fn get_log(_: &Vec<String>)
+// get log [level]
+fn get_log(args: &Vec<String>)
 {
-	println!("all log lines");
+	let level = if args.len() > 2 {&args[2]} else {"info"};
+	print_log("*", u64::MAX, &level);
 }
 
-// get log <path>
+// get log <path> [level]
 fn get_log_path(args: &Vec<String>)
 {
-	println!("all log lines for {}", args[2]);
+	let path = &args[2];
+	let level = if args.len() > 3 {&args[3]} else {"info"};
+	print_log(path, u64::MAX, &level);
 }
 
-// get log <number>
+// get log <number> [level]
 fn get_log_n(args: &Vec<String>)
 {
-	let n = parse_number(&args[2]).unwrap();
-	println!("{} log lines", n);
+	let limit = parse_number(&args[2]).unwrap();
+	let level = if args.len() > 3 {&args[3]} else {"info"};
+	print_log("*", limit, &level);
 }
 
-// get log <path> <number>
+// get log <path> <number> [level]
 fn get_log_path_n(args: &Vec<String>)
 {
-	let n = parse_number(&args[3]).unwrap();
-	println!("{} log lines for {}", n, args[2]);
+	let path = &args[2];
+	let limit = parse_number(&args[3]).unwrap();
+	let level = if args.len() > 4 {&args[4]} else {"info"};
+	print_log(path, limit, &level);
+}
+
+fn print_log(path: &str, limit: u64, level: &str)
+{
+	let limit_label = if limit == u64::MAX {"unlimited".to_string()} else {format!("{}", limit)};
+	println!("{} {} log lines for {}", limit_label, level, path);
 }
 
 // get state
@@ -240,4 +276,12 @@ fn get_history_path() -> String
 		Some(path) => path.join(file_name).to_str().unwrap().to_string(),
 		None => file_name.to_string()
 	}
+}
+
+// TODO: include the current sim time
+fn get_prompt() -> String
+{
+	let prefix = "\x1b[34;1m";	// bright blue, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+	let suffix = "\x1b[0m";
+	prefix.to_string() + "0.000> " + suffix
 }

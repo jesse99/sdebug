@@ -91,11 +91,26 @@ pub fn parse_number(arg: &str) -> Option<u64>
 pub fn parse_path(arg: &str) -> Option<&str>
 {
 	// Paths start with a letter and have no whitespace, control, or quote characters.
-	if arg.chars().nth(0).unwrap_or('1').is_alphabetic() {
+	if valid_component_name(arg) && parse_level(arg).is_none() {
 		Some(arg)
 	} else {
 		None
 	}
+}
+
+/// Returns the arg if it is a log level (e.g. "info"). Returns None otherwise.
+pub fn parse_level(arg: &str) -> Option<&str>
+{
+	match arg {
+		"error" | "warning" | "info" | "debug" | "excessive" => Some(arg),
+		_ => None,
+	}
+}
+
+// i.e. does the path start with a legit component name
+fn valid_component_name(path: &str) -> bool
+{
+	path.chars().nth(0).unwrap_or('1').is_alphabetic()
 }
 
 // Returns prefix and the suffix scale factor.
