@@ -18,12 +18,14 @@ use helpers::*;
 use input::*;
 use std::fmt::Display;
 use std::str::FromStr;
+use std::usize;
 use time::*;
 
-struct Config
+pub struct Config
 {
 	server: String,
 	port: i32,
+	precision: usize,
 }
 
 impl Config
@@ -34,6 +36,7 @@ impl Config
 		Config {
 			server: "127.0.0.1".to_string(),
 			port: 9000,
+			precision: usize::MAX,
 		}
 	}
 }
@@ -56,8 +59,9 @@ fn parse_options() -> Config
 	
 	// see https://docs.rs/clap/2.24.2/clap/struct.Arg.html#method.from_usage for syntax
 	let usage = format!(
-		"--server=[ADDRESS] 'Address the score simulation is bound to [{default_server}]'
-		--port=[NUM] 'Port the score simulation is bound to [{default_port}]'",
+		"--port=[NUM] 'Port the score simulation is bound to [{default_port}]'
+		--precision=[NUM] 'Time decimal places [score's precision]'
+		--server=[ADDRESS] 'Address the score simulation is bound to [{default_server}]'",
 		default_server = config.server,
 		default_port = config.port);
 	
@@ -74,8 +78,21 @@ fn parse_options() -> Config
 	if matches.is_present("port") {
 		config.port = match_num(&matches, "port", 1, 65535) as i32;
 	}
+	if matches.is_present("precision") {
+		config.precision = match_num(&matches, "precision", 0, 32) as usize;
+	}
 		
 	config
+}
+
+fn startup(mut config: Config, endpoint: Endpoint)
+{
+	if config.precision == usize::MAX {
+		config.precision = get_time_precision(&endpoint);
+	} else {
+		get_time(&endpoint);	// make sure that we're connected to score
+	}
+	read_lines(config, endpoint);
 }
 
 fn main()
@@ -83,7 +100,7 @@ fn main()
 	let config = parse_options();
 	let url = format!("http://{}:{}/", config.server, config.port);
 	match Endpoint::new(&url) {
-		Ok(endpoint) => {get_time(&endpoint); read_lines(endpoint);},	// get_time preflights the endpoint
+		Ok(endpoint) => startup(config, endpoint),
 		Err(err) => println!("error connecting to {}: {}", url, err),
 	}
 }

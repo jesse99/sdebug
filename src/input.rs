@@ -1,6 +1,6 @@
 //! Use linenoise (aka readline) to allow the user to enter in and edit
 //! a command line.
-//use crest::error::Result;
+use *;
 use crest::prelude::*;
 use parse::*;
 use rustyline::error::ReadlineError;
@@ -15,7 +15,7 @@ type Handler = fn (&Vec<String>) -> ();
 type Commands = Vec<(Vec<String>, Handler, &'static str)>;
 
 /// Use linenoise to read in lines typed by the user and process them.
-pub fn read_lines(endpoint: Endpoint)
+pub fn read_lines(config: Config, endpoint: Endpoint)
 {
 	let hpath = get_history_path();
 	let commands = init_commands();
@@ -26,7 +26,7 @@ pub fn read_lines(endpoint: Endpoint)
 		println!("Error loading history: {}", err);
 	}
 	loop {
-		let prompt = get_prompt(&endpoint);
+		let prompt = get_prompt(&config, &endpoint);
 		let readline = editor.readline(&prompt);
 		match readline {
 			Ok(line) => {
@@ -281,11 +281,10 @@ fn get_history_path() -> String
 	}
 }
 
-fn get_prompt(endpoint: &Endpoint) -> String
+fn get_prompt(config: &Config, endpoint: &Endpoint) -> String
 {
 	let time = get_time(endpoint);
-	let precision = get_time_precision(endpoint);
-	let prompt = format!("{:.1$}", time, precision);
+	let prompt = format!("{:.1$}", time, config.precision);
 
 	let prefix = "\x1b[34;1m";	// bright blue, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 	let suffix = "\x1b[0m";
