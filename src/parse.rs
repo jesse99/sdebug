@@ -1,7 +1,7 @@
 //! Various parsing related helpers.
 use std::str::FromStr;
 
-/// The units we allow with durations. (These are public so that help can
+/// The units we allow with times. (These are public so that help can
 /// print them).
 pub const UNITS: &'static [(&'static str, f64)] = &[
 	("ns", 0.000_000_001),
@@ -61,8 +61,8 @@ pub fn tokenize(text: &str) -> Result<Vec<String>, String>
 }
 
 /// Converts a string like "10.5ms" to a number in seconds.
-/// Returns None if the string isn't a duration or has extra characters.
-pub fn parse_duration(arg: &str) -> Option<f64>
+/// Returns None if the string isn't a time or has extra characters.
+pub fn parse_time(arg: &str) -> Option<f64>
 {
 	if let Some((prefix, scale_by)) = parse_time_suffix(arg) {
 		if let Ok(x) = f64::from_str(prefix) {

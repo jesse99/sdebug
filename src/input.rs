@@ -10,7 +10,7 @@ use std::u64;
 use time::*;
 //use std::str::FromStr;
 
-type Handler = fn (&Vec<String>) -> ();
+type Handler = fn (&Endpoint, &Vec<String>) -> ();
 
 type Commands = Vec<(Vec<String>, Handler, &'static str)>;
 
@@ -40,7 +40,7 @@ pub fn read_lines(config: Config, endpoint: Endpoint)
 					_ => {
 						editor.add_history_entry(&line);	// even if there is an error, it's nice to have it in the history so that the user can easily repair it
 						match tokenize(&line) {
-							Ok(args) => process_line(&args, &commands),
+							Ok(args) => process_line(&endpoint, &args, &commands),
 							Err(s) => println!("{}", s),
 						}
 					}
@@ -61,11 +61,11 @@ pub fn read_lines(config: Config, endpoint: Endpoint)
 	editor.save_history(&hpath).unwrap();
 }
 
-fn process_line(args: &Vec<String>, commands: &Commands)
+fn process_line(endpoint: &Endpoint, args: &Vec<String>, commands: &Commands)
 {
 	if args.len() > 0 {
 		if let Some(handler) = find_handler(&args, commands) {
-			handler(&args);
+			handler(endpoint, &args);
 			
 		} else {
 			// We failed to find a command that matched what the user typed
@@ -146,7 +146,7 @@ fn arg_matches(args: &Vec<String>, command: &Vec<String>, index: usize) -> bool
 {
 	if index < args.len() && index < command.len() {
 		match command[index].as_ref() {
-			"<duration>" => parse_duration(&args[index]).is_some(),
+			"<time>" => parse_time(&args[index]).is_some(),
 			"[level]" => parse_level(&args[index]).is_some(),
 			"<number>" => parse_number(&args[index]).is_some(),
 			"<path>" => parse_path(&args[index]).is_some(),
@@ -172,7 +172,7 @@ fn init_commands() -> Commands
 		(cmd("get state"),                       get_state,      "print the store for the current time"),
 		(cmd("get state <path>"),                get_state_path, "   for components matching path"),
 		(cmd("set state <path> <value>"),        set_state,      "set state for the component (the path should include the state name)"),
-		(cmd("set time <duration>"),             set_time_secs,  "advance or rollback sim time")
+		(cmd("set time <time>"),                 set_time_secs,  "advance sim time")	// TODO: support rollback, maybe by undoing Effects
 	)
 }
 
@@ -200,76 +200,76 @@ fn print_help(commands: &Commands)
 	let units: Vec<&str> = UNITS.iter().map(|u| u.0).collect();
 	println!("Arguments in <angle brackets> are required. Arguments in [square brackets] are optional.");
 	println!("");
-	println!("Durations are floating point numbers with a {} suffix.", units.join(", "));
 	println!("Level must be error, warning, info, debug, or excessive. It defaults to info.");
 	println!("Numbers are non-negative integer values.");
 	println!("Paths are component paths, e.g. bob.heart.right-ventricle. Paths may be globbed.");
+	println!("Times are floating point numbers with a {} suffix.", units.join(", "));
 	println!("Values are ints, floats (decimal point is required), or strings.");
 	println!("Strings are quoted with ', \", or `. Escapes are not currently supported.");
 }
 
 // get log [level]
-fn get_log(args: &Vec<String>)
+fn get_log(endpoint: &Endpoint, args: &Vec<String>)
 {
 	let level = if args.len() > 2 {&args[2]} else {"info"};
-	print_log("*", u64::MAX, &level);
+	print_log(endpoint, "*", u64::MAX, &level);
 }
 
 // get log <path> [level]
-fn get_log_path(args: &Vec<String>)
+fn get_log_path(endpoint: &Endpoint, args: &Vec<String>)
 {
 	let path = &args[2];
 	let level = if args.len() > 3 {&args[3]} else {"info"};
-	print_log(path, u64::MAX, &level);
+	print_log(endpoint, path, u64::MAX, &level);
 }
 
 // get log <number> [level]
-fn get_log_n(args: &Vec<String>)
+fn get_log_n(endpoint: &Endpoint, args: &Vec<String>)
 {
 	let limit = parse_number(&args[2]).unwrap();
 	let level = if args.len() > 3 {&args[3]} else {"info"};
-	print_log("*", limit, &level);
+	print_log(endpoint, "*", limit, &level);
 }
 
 // get log <path> <number> [level]
-fn get_log_path_n(args: &Vec<String>)
+fn get_log_path_n(endpoint: &Endpoint, args: &Vec<String>)
 {
 	let path = &args[2];
 	let limit = parse_number(&args[3]).unwrap();
 	let level = if args.len() > 4 {&args[4]} else {"info"};
-	print_log(path, limit, &level);
+	print_log(endpoint, path, limit, &level);
 }
 
-fn print_log(path: &str, limit: u64, level: &str)
+fn print_log(_: &Endpoint, path: &str, limit: u64, level: &str)
 {
 	let limit_label = if limit == u64::MAX {"unlimited".to_string()} else {format!("{}", limit)};
 	println!("{} {} log lines for {}", limit_label, level, path);
 }
 
 // get state
-fn get_state(_: &Vec<String>)
+fn get_state(_: &Endpoint, _: &Vec<String>)
 {
 	println!("all state for the current time");
 }
 
 // get state <path>
-fn get_state_path(args: &Vec<String>)
+fn get_state_path(_: &Endpoint, args: &Vec<String>)
 {
 	println!("all state for {}", args[2]);
 }
 
 // set state <path> <value>
-fn set_state(args: &Vec<String>)
+fn set_state(_: &Endpoint, args: &Vec<String>)
 {
 	let value = args.split_at(2).1;
 	println!("{} = {}", args[2], value.join(" "));
 }
 
 // set time secs
-fn set_time_secs(args: &Vec<String>)
+fn set_time_secs(endpoint: &Endpoint, args: &Vec<String>)
 {
-	let duration = parse_duration(&args[2]).unwrap();
-	println!("set time {:.6}", duration);
+	let time = parse_time(&args[2]).unwrap();
+	set_time(endpoint, time);
 }
 
 fn get_history_path() -> String

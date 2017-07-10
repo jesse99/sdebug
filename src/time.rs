@@ -15,3 +15,15 @@ pub fn get_time_precision(endpoint: &Endpoint) -> usize
 {
 	get_rest::<usize>(endpoint, &["time", "precision"])
 }
+
+/// Advance simulation time to the specified number of seconds.
+pub fn set_time(endpoint: &Endpoint, secs: f64)
+{
+	assert!(secs > 0.0);
+	let arg = format!("{:.12}", secs);
+	let result = post_rest(endpoint, &["time", &arg]);
+	if result != "ok" {
+		println!("{}", result);
+	}
+}
+
