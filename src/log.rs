@@ -32,6 +32,6 @@ fn get_log(endpoint: &Endpoint, path: &str, limit: u64, level: &str) -> Vec<LogL
 fn print_line(config: &Config, line: &LogLine)
 {
 	let time = format!("{:.1$}", line.time, config.precision);
-	print!("{}  {:.5} {}  {}\n", time, line.level, line.path, line.message);
+	print!("{}  {:5.5} {}  {}\n", time, line.level, line.path, line.message);
 }
 
