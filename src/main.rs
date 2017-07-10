@@ -3,12 +3,16 @@
 #[macro_use]
 extern crate clap;
 
+#[macro_use]
+extern crate serde_derive;
+
 extern crate crest;
 extern crate rustyline;
 extern crate serde;
 
 mod helpers;
 mod input;
+mod log;
 mod parse;
 mod time;
 

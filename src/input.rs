@@ -2,6 +2,7 @@
 //! a command line.
 use *;
 use crest::prelude::*;
+use log::*;
 use parse::*;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
@@ -10,7 +11,7 @@ use std::u64;
 use time::*;
 //use std::str::FromStr;
 
-type Handler = fn (&Endpoint, &Vec<String>) -> ();
+type Handler = fn (&Config, &Endpoint, &Vec<String>) -> ();
 
 type Commands = Vec<(Vec<String>, Handler, &'static str)>;
 
@@ -40,7 +41,7 @@ pub fn read_lines(config: Config, endpoint: Endpoint)
 					_ => {
 						editor.add_history_entry(&line);	// even if there is an error, it's nice to have it in the history so that the user can easily repair it
 						match tokenize(&line) {
-							Ok(args) => process_line(&endpoint, &args, &commands),
+							Ok(args) => process_line(&config, &endpoint, &args, &commands),
 							Err(s) => println!("{}", s),
 						}
 					}
@@ -61,11 +62,11 @@ pub fn read_lines(config: Config, endpoint: Endpoint)
 	editor.save_history(&hpath).unwrap();
 }
 
-fn process_line(endpoint: &Endpoint, args: &Vec<String>, commands: &Commands)
+fn process_line(config: &Config, endpoint: &Endpoint, args: &Vec<String>, commands: &Commands)
 {
 	if args.len() > 0 {
 		if let Some(handler) = find_handler(&args, commands) {
-			handler(endpoint, &args);
+			handler(config, endpoint, &args);
 			
 		} else {
 			// We failed to find a command that matched what the user typed
@@ -165,7 +166,7 @@ fn arg_matches(args: &Vec<String>, command: &Vec<String>, index: usize) -> bool
 fn init_commands() -> Commands
 {
 	vec!(
-		(cmd("get log [level]"),                 get_log,        "print the logs for all components"),
+		(cmd("get log [level]"),                 get_log_all,    "print the logs for all components"),
 		(cmd("get log <path> [level]"),          get_log_path,   "   for components matching path"),
 		(cmd("get log <number> [level]"),        get_log_n,      "   last N lines"),
 		(cmd("get log <path> <number> [level]"), get_log_path_n, "   N lines for path"),
@@ -181,10 +182,6 @@ fn cmd(text: &str) -> Vec<String>
 	text.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-//					"quit" | "exit" | "q" => {	// if more hard-coded commands are added then also update print_help
-//						break;
-//					},
-//					"help" | "?" => {
 fn print_help(commands: &Commands)
 {
 	println!("The commands are:");
@@ -209,64 +206,58 @@ fn print_help(commands: &Commands)
 }
 
 // get log [level]
-fn get_log(endpoint: &Endpoint, args: &Vec<String>)
+fn get_log_all(config: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
 	let level = if args.len() > 2 {&args[2]} else {"info"};
-	print_log(endpoint, "*", u64::MAX, &level);
+	print_log(config, endpoint, "*", u64::MAX, &level);
 }
 
 // get log <path> [level]
-fn get_log_path(endpoint: &Endpoint, args: &Vec<String>)
+fn get_log_path(config: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
 	let path = &args[2];
 	let level = if args.len() > 3 {&args[3]} else {"info"};
-	print_log(endpoint, path, u64::MAX, &level);
+	print_log(config, endpoint, path, u64::MAX, &level);
 }
 
 // get log <number> [level]
-fn get_log_n(endpoint: &Endpoint, args: &Vec<String>)
+fn get_log_n(config: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
 	let limit = parse_number(&args[2]).unwrap();
 	let level = if args.len() > 3 {&args[3]} else {"info"};
-	print_log(endpoint, "*", limit, &level);
+	print_log(config, endpoint, "*", limit, &level);
 }
 
 // get log <path> <number> [level]
-fn get_log_path_n(endpoint: &Endpoint, args: &Vec<String>)
+fn get_log_path_n(config: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
 	let path = &args[2];
 	let limit = parse_number(&args[3]).unwrap();
 	let level = if args.len() > 4 {&args[4]} else {"info"};
-	print_log(endpoint, path, limit, &level);
-}
-
-fn print_log(_: &Endpoint, path: &str, limit: u64, level: &str)
-{
-	let limit_label = if limit == u64::MAX {"unlimited".to_string()} else {format!("{}", limit)};
-	println!("{} {} log lines for {}", limit_label, level, path);
+	print_log(config, endpoint, path, limit, &level);
 }
 
 // get state
-fn get_state(_: &Endpoint, _: &Vec<String>)
+fn get_state(_: &Config, _: &Endpoint, _: &Vec<String>)
 {
 	println!("all state for the current time");
 }
 
 // get state <path>
-fn get_state_path(_: &Endpoint, args: &Vec<String>)
+fn get_state_path(_: &Config, _: &Endpoint, args: &Vec<String>)
 {
 	println!("all state for {}", args[2]);
 }
 
 // set state <path> <value>
-fn set_state(_: &Endpoint, args: &Vec<String>)
+fn set_state(_: &Config, _: &Endpoint, args: &Vec<String>)
 {
 	let value = args.split_at(2).1;
 	println!("{} = {}", args[2], value.join(" "));
 }
 
 // set time secs
-fn set_time_secs(endpoint: &Endpoint, args: &Vec<String>)
+fn set_time_secs(_: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
 	let time = parse_time(&args[2]).unwrap();
 	set_time(endpoint, time);
