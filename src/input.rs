@@ -203,7 +203,7 @@ fn print_help(commands: &Commands)
 	println!("Level must be error, warning, info, debug, or excessive. It defaults to info.");
 	println!("Numbers are non-negative integer values.");
 	println!("Paths are component paths, e.g. bob.heart.right-ventricle. Paths may be globbed.");
-	println!("Times are floating point numbers with a {} suffix.", units.join(", "));
+	println!("Times are floating point numbers with a {} suffix. If suffix is missing s is used.", units.join(", "));
 	println!("Values are ints, floats (decimal point is required), or strings.");
 	println!("Strings are quoted with ', \", or `. Escapes are not currently supported.");
 }

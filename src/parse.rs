@@ -70,6 +70,8 @@ pub fn parse_time(arg: &str) -> Option<f64>
 		} else {
 			None
 		}
+	} else if let Ok(x) = f64::from_str(arg) {
+		Some(x)
 	} else {
 		None
 	}
