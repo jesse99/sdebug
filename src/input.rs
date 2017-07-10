@@ -152,7 +152,7 @@ fn arg_matches(args: &Vec<String>, command: &Vec<String>, index: usize) -> bool
 			"[level]" => parse_level(&args[index]).is_some(),
 			"<number>" => parse_number(&args[index]).is_some(),
 			"<path>" => parse_path(&args[index]).is_some(),
-			"<value>" => true,	// TODO: handle strings
+			"<value>" => true,
 			_ => args[index] == command[index]
 		}
 	} else if index == args.len() && args.len() == command.len() + 1 {
@@ -173,7 +173,7 @@ fn init_commands() -> Commands
 		(cmd("get log <path> <number> [level]"), get_log_path_n, "   N lines for path"),
 		(cmd("get state"),                       get_state,      "print the store for the current time"),
 		(cmd("get state <path>"),                get_state_path, "   for components matching path"),
-		(cmd("set state <path> <value>"),        set_state,      "set state for the component (the path should include the state name)"),
+		(cmd("set state <path> <value>"),        set_state_path, "set state for the component (the path should include the state name)"),
 		(cmd("set time <time>"),                 set_time_secs,  "advance sim time")	// TODO: support rollback, maybe by undoing Effects
 	)
 }
@@ -252,10 +252,17 @@ fn get_state_path(_: &Config, endpoint: &Endpoint, args: &Vec<String>)
 }
 
 // set state <path> <value>
-fn set_state(_: &Config, _: &Endpoint, args: &Vec<String>)
+fn set_state_path(_: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
-	let value = args.split_at(2).1;
-	println!("{} = {}", args[2], value.join(" "));
+	let path = &args[2];
+	let value = &args[3];
+	if parse_int(value).is_some() {
+		set_state(endpoint, path, "int", value);
+	} else if parse_float(value).is_some() {
+		set_state(endpoint, path, "float", value);
+	} else {
+		set_state(endpoint, path, "string", value);
+	}
 }
 
 // set time secs

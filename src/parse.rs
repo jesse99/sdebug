@@ -88,6 +88,24 @@ pub fn parse_number(arg: &str) -> Option<u64>
 	}
 }
 
+pub fn parse_int(arg: &str) -> Option<i64>
+{
+	if let Ok(x) = i64::from_str(arg) {
+		Some(x)
+	} else {
+		None
+	}
+}
+
+pub fn parse_float(arg: &str) -> Option<f64>
+{
+	if let Ok(x) = f64::from_str(arg) {
+		Some(x)
+	} else {
+		None
+	}
+}
+
 /// Returns the path if it actually looks like a path. Returns None for things
 /// like not starting with a letter.
 pub fn parse_path(arg: &str) -> Option<&str>
