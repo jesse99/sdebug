@@ -277,7 +277,11 @@ fn get_prompt(config: &Config, endpoint: &Endpoint) -> String
 	let time = get_time(endpoint);
 	let prompt = format!("{:.1$}", time, config.precision);
 
-	let prefix = "\x1b[34;1m";	// bright blue, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-	let suffix = "\x1b[0m";
-	format!("{}{}> {}", prefix, prompt, suffix)
+	if config.colorize {
+		let begin_color = "\x1b[34;1m";	// bright blue, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+		let end_color = "\x1b[0m";
+		format!("{}{}> {}", begin_color, prompt, end_color)
+	} else {
+		format!("{}> ", prompt)
+	}
 }

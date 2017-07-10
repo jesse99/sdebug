@@ -30,6 +30,7 @@ pub struct Config
 	server: String,
 	port: i32,
 	precision: usize,
+	colorize: bool,
 }
 
 impl Config
@@ -41,6 +42,7 @@ impl Config
 			server: "127.0.0.1".to_string(),
 			port: 9000,
 			precision: usize::MAX,
+			colorize: true,
 		}
 	}
 }
@@ -63,7 +65,8 @@ fn parse_options() -> Config
 	
 	// see https://docs.rs/clap/2.24.2/clap/struct.Arg.html#method.from_usage for syntax
 	let usage = format!(
-		"--port=[NUM] 'Port the score simulation is bound to [{default_port}]'
+		"--no-colors 'Don't color code output'
+		--port=[NUM] 'Port the score simulation is bound to [{default_port}]'
 		--precision=[NUM] 'Time decimal places [score's precision]'
 		--server=[ADDRESS] 'Address the score simulation is bound to [{default_server}]'",
 		default_server = config.server,
@@ -76,6 +79,9 @@ fn parse_options() -> Config
 		.args_from_usage(&usage)
 	.get_matches();
 		
+	if matches.is_present("no-colors") {
+		config.colorize = false;
+	}
 	if matches.is_present("server") {
 		config.server = matches.value_of("server").unwrap().to_string();
 	}

@@ -2,8 +2,6 @@
 use *;
 use crest::prelude::*;
 use helpers::*;
-//use ::serde::{Deserialize, Serialize};
-//use serde::de::{Deserialize, Deserializer};
 
 pub fn print_log(config: &Config, endpoint: &Endpoint, path: &str, limit: u64, level: &str)
 {
@@ -32,6 +30,19 @@ fn get_log(endpoint: &Endpoint, path: &str, limit: u64, level: &str) -> Vec<LogL
 fn print_line(config: &Config, line: &LogLine)
 {
 	let time = format!("{:.1$}", line.time, config.precision);
-	print!("{}  {:5.5} {}  {}\n", time, line.level, line.path, line.message);
+	if config.colorize {
+		let begin_color = match line.level.as_ref() {
+			"Error" => "\x1b[31;1m",			// bright red
+			"Warning" => "\x1b[31m",			// red
+			"Info" => "\x1b[30;1m",				// bold black
+			"Debug" => "",
+			"Excessive" => "\x1b[1;38;5;244m",	// light grey
+			_ => {assert!(false); "xxx"},
+		};
+		let end_color = "\x1b[0m";
+		print!("{}{}  {}  {}{}\n", begin_color, time, line.path, line.message, end_color);
+	} else {
+		print!("{}  {:5.5} {}  {}\n", time, line.level, line.path, line.message);
+	}
 }
 
