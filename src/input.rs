@@ -8,6 +8,7 @@ use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::env;
 use std::u64;
+use state::*;
 use time::*;
 //use std::str::FromStr;
 
@@ -238,15 +239,16 @@ fn get_log_path_n(config: &Config, endpoint: &Endpoint, args: &Vec<String>)
 }
 
 // get state
-fn get_state(_: &Config, _: &Endpoint, _: &Vec<String>)
+fn get_state(_: &Config, endpoint: &Endpoint, _: &Vec<String>)
 {
-	println!("all state for the current time");
+	print_state(endpoint, "*");
 }
 
 // get state <path>
-fn get_state_path(_: &Config, _: &Endpoint, args: &Vec<String>)
+fn get_state_path(_: &Config, endpoint: &Endpoint, args: &Vec<String>)
 {
-	println!("all state for {}", args[2]);
+	let path = &args[2];
+	print_state(endpoint, path);
 }
 
 // set state <path> <value>

@@ -14,6 +14,7 @@ mod helpers;
 mod input;
 mod log;
 mod parse;
+mod state;
 mod time;
 
 use clap::{App, ArgMatches};

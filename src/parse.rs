@@ -93,7 +93,7 @@ pub fn parse_number(arg: &str) -> Option<u64>
 pub fn parse_path(arg: &str) -> Option<&str>
 {
 	// Paths start with a letter and have no whitespace, control, or quote characters.
-	if valid_component_name(arg) && parse_level(arg).is_none() {
+	if (valid_component_name(arg) || valid_glob_char(arg)) && parse_level(arg).is_none() {
 		Some(arg)
 	} else {
 		None
@@ -113,6 +113,13 @@ pub fn parse_level(arg: &str) -> Option<&str>
 fn valid_component_name(path: &str) -> bool
 {
 	path.chars().nth(0).unwrap_or('1').is_alphabetic()
+}
+
+// i.e. does the path start with a glob special character
+fn valid_glob_char(path: &str) -> bool
+{
+	let ch = path.chars().nth(0).unwrap_or('1');
+	ch == '?' || ch == '*' || ch == '['
 }
 
 // Returns prefix and the suffix scale factor.
