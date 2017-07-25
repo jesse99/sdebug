@@ -11,4 +11,5 @@ Cargo.lock
 
 .mimsy.rtf
 *color.xml
+.DS_Store
 
