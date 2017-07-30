@@ -20,6 +20,12 @@ function format(pattern, ...args) // TODO: replace this with template literals (
 	);
 }
 
+Element.prototype.appendClass = function(name)
+{
+  var old = this.getAttribute("class");
+  this.setAttribute("class", old + " " + name); 
+}
+
 // Make an AJAX call and either call resolved with json from the response text or reject with an Error.
 function makeRequest (method, url) {
   return new Promise((resolved, reject) => {

@@ -19,7 +19,7 @@ window.onload = function()
 	button = document.getElementsByName("run-until-changed")[0];
 	button.addEventListener("click", () => {run_until("/run/until/log-changed");});
 
-	set_precision();
+	get_precision();
 	refresh_header();
 	refresh_table();
 };
@@ -30,6 +30,12 @@ function run_until(endpoint)
 		.then((data) => {			
 			if (data === "exited") {
 				SDEBUG.exited = true;
+
+				var button = document.getElementsByName("run-until")[0];
+				button.appendClass("is-static"); 
+
+				button = document.getElementsByName("run-until-changed")[0];
+				button.appendClass("is-static"); 
 			}
 			refresh_header();
 			refresh_table();
@@ -39,7 +45,7 @@ function run_until(endpoint)
 		});
 }
 
-function set_precision()
+function get_precision()
 {
 	makeRequest("GET", "/time/precision")
 		.then((data) => {			
@@ -78,18 +84,18 @@ function refresh_table()
 	{
 		var body = document.getElementById("table-body");
 		var row = body.insertRow(-1);
-		row.setAttribute("class", level); 
+		row.appendClass(level); 
 		
 		var cell = row.insertCell(-1);
 		cell.appendChild(document.createTextNode(time.toFixed(SDEBUG.precision)));
-		cell.setAttribute("class", "leftmost"); 
+		cell.appendClass("leftmost"); 
 
 		row.insertCell(-1).appendChild(document.createTextNode(level));
 		row.insertCell(-1).appendChild(document.createTextNode(path));
 
 		cell = row.insertCell(-1);
 		cell.appendChild(document.createTextNode(message));
-		cell.setAttribute("class", "rightmost"); 
+		cell.appendClass("rightmost"); 
 	}
 
 	makeRequest("GET", "/log/after/" + SDEBUG.last_logged_time)
