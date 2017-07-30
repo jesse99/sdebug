@@ -4,6 +4,7 @@
 
 var SDEBUG = {}
 SDEBUG.precision = 6;
+SDEBUG.last_logged_time = -1.0;
 SDEBUG.exited = false;
 
 window.onload = function()
@@ -13,6 +14,7 @@ window.onload = function()
 
 	set_precision();
 	refresh_header();
+	refresh_table();
 };
 
 function on_run_until()
@@ -24,6 +26,7 @@ function on_run_until()
 				SDEBUG.exited = true;
 			}
 			refresh_header();
+			refresh_table();
 		})
 		.catch((err) => {
 			console.error(err);
@@ -60,5 +63,30 @@ function refresh_header()
 
 			var header = document.getElementById("header");
 			header.innerHTML = "Simulator @ ?s";
+		});
+}
+
+function refresh_table()
+{
+	function append_row(time, path, level, message)
+	{
+		var body = document.getElementById("table-body");
+		var row = body.insertRow(-1);
+		row.insertCell(-1).appendChild(document.createTextNode(time.toFixed(SDEBUG.precision)));
+		row.insertCell(-1).appendChild(document.createTextNode(path));
+		row.insertCell(-1).appendChild(document.createTextNode(level));
+		row.insertCell(-1).appendChild(document.createTextNode(message));
+	}
+
+	makeRequest("GET", "/log/after/" + SDEBUG.last_logged_time)
+		.then((data) => {	
+			for (var row of data) {		
+				append_row(row.time, row.path, row.level, row.message);
+				SDEBUG.last_logged_time = row.time;
+			}
+		})
+		.catch((err) => {
+			console.error(err);
+			append_row(SDEBUG.last_logged_time, "?", "Error", "AJAX failed");
 		});
 }

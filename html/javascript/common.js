@@ -5,7 +5,7 @@
 
 // Replaces {0} with argument 0, {1} with argument 1, etc.
 // Argument index can be appended with ":j" to print the argument as json.
-function format(pattern, ...args)
+function format(pattern, ...args) // TODO: replace this with template literals (once vs code's javascript extension doesn't freak out)
 {
 	return pattern.replace(/{(\d+?)(:j)?}/g,
 		(match, number, json) =>
@@ -28,7 +28,7 @@ function makeRequest (method, url) {
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status <= 299) {
           try {
-            var data = JSON.parse(xhr.responseText);
+            const data = JSON.parse(xhr.responseText);
             resolved(data);
           } catch (exception) {
             reject(new Error(format("{0} {1} result ({2}) didn't parse as json", method, url, xhr.responseText)));
