@@ -12,4 +12,5 @@ Cargo.lock
 .mimsy.rtf
 *color.xml
 .DS_Store
+node_modules
 

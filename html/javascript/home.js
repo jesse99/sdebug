@@ -1,5 +1,7 @@
 "use strict";
 
+/* global makeRequest, format:true */
+
 var SDEBUG = {}
 SDEBUG.precision = 6;
 SDEBUG.exited = false;
@@ -16,7 +18,7 @@ window.onload = function()
 function on_run_until()
 {
 	var input = document.getElementById("run-time");
-
+	
 	var request = new XMLHttpRequest();
 	request.addEventListener("load", finish_run_until);
 	request.addEventListener("error", on_ajax_error);
@@ -35,11 +37,16 @@ function start_set_precision()
 
 function start_refresh_header()
 {
-	var request = new XMLHttpRequest();
-	request.addEventListener("load", finish_refresh_header);
-	request.addEventListener("error", on_ajax_error);
-	request.open("GET", "/time");
-	request.send();
+	makeRequest("GET", "/time")
+		.then((data) => {finish_refresh_header(data);})
+		.catch((err) => {console.log("fetch failed with ", err);});
+
+
+//	var request = new XMLHttpRequest();
+//	request.addEventListener("load", finish_refresh_header);
+//	request.addEventListener("error", on_ajax_error);
+//	request.open("GET", "/time");
+//	request.send();
 }
 
 function finish_run_until(progress)
@@ -56,19 +63,18 @@ function finish_set_precision(progress)
 	SDEBUG.precision = JSON.parse(this.responseText);
 }
 
-function finish_refresh_header(progress)
+function finish_refresh_header(data)
 {
-	var json = JSON.parse(this.responseText);
 	var header = document.getElementById("header");
 	
-	var mesg = "Simulator @ " + json.toFixed(SDEBUG.precision) + "s";
+	var mesg = format("Simulator @ {0}s", data.toFixed(SDEBUG.precision));
 	if (SDEBUG.exited) {
 		mesg += " (exited)";
 	}
 	header.innerHTML = mesg;
 
 	var input = document.getElementById("run-time");
-	input.value = json;
+	input.value = data;
 }
 
 function on_ajax_error(progress)
