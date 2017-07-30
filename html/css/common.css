@@ -1,9 +1,14 @@
-header > h2
-{
-	text-align: center;
-}
+/* table { border-collapse: collapse; }*/
+/*td {
+  border-right: solid 1p; 
+  border-left: solid 1px;
+}*/
+
+@import "third_party/bulma.css";
+/* tr { border: none; }*/
 
 .foo
 {
 	color: green;
 }
+

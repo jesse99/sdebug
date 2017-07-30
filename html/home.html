@@ -9,18 +9,41 @@
 	
 	<body>
 		<header>
-			<h2 id="header">Simulator @ 10.2s</h2>
+			<h2 id="header" class="has-text-centered is-size-2">Simulator @ 10.2s</h2>
 		</header>
 		
 		<!-- time -->
-		<section>
-			<button name="run-until">Run Until</button>
-			<input type="number" min=0 id="run-time"/>
-		</section>
+		<div class="field has-addons">
+			<div class="control">
+				<button name="run-until" class="button is-info">Run Until</button>
+			</div>
+			<div class="control">
+				<label class="label">  </label>
+			</div>
+			<div class="control">
+				<input type="number" min=0 id="run-time" class="input is-primary"/>
+			</div>
+		</div>
 
-		<p class="foo">Log</p>
+		<div class="tabs is-centered">
+			<ul>
+				<li><a>Map</a></li>
+				<li class="is-active"><a>Log</a></li>
+				<li><a>State</a></li>
+				<li><a>Children</a></li>
+				<li><a>Parents</a></li>
+			</ul>
+		</div>
 
-		<table>
+		<table class="table is-striped is-centered">
+			<thead>
+				<tr>
+					<th>Time</th>
+					<th>Path</th>
+					<th>Level</th>
+					<th>Message</th>
+				</tr>
+			</thead>
 			<tbody id="table-body">
 			</tbody>
 		</table>
