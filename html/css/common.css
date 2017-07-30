@@ -7,8 +7,38 @@
 @import "third_party/bulma.css";
 /* tr { border: none; }*/
 
-.foo
+tr.Error
 {
-	color: green;
+	color: red;
 }
 
+tr.Warning
+{
+	color: orange;
+}
+
+tr.Debug
+{
+	color: gray;
+}
+
+tr.Excessive
+{
+	color: silver;
+}
+
+td.leftmost
+{
+	border-left: 1px solid silver;
+}
+
+td.rightmost
+{
+	border-right: 1px solid silver;
+}
+
+table.is-centered
+{ 
+	margin-left: auto;
+	margin-right: auto;
+}

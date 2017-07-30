@@ -72,10 +72,18 @@ function refresh_table()
 	{
 		var body = document.getElementById("table-body");
 		var row = body.insertRow(-1);
-		row.insertCell(-1).appendChild(document.createTextNode(time.toFixed(SDEBUG.precision)));
-		row.insertCell(-1).appendChild(document.createTextNode(path));
+		row.setAttribute("class", level); 
+		
+		var cell = row.insertCell(-1);
+		cell.appendChild(document.createTextNode(time.toFixed(SDEBUG.precision)));
+		cell.setAttribute("class", "leftmost"); 
+
 		row.insertCell(-1).appendChild(document.createTextNode(level));
-		row.insertCell(-1).appendChild(document.createTextNode(message));
+		row.insertCell(-1).appendChild(document.createTextNode(path));
+
+		cell = row.insertCell(-1);
+		cell.appendChild(document.createTextNode(message));
+		cell.setAttribute("class", "rightmost"); 
 	}
 
 	makeRequest("GET", "/log/after/" + SDEBUG.last_logged_time)
