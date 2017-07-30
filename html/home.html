@@ -13,18 +13,19 @@
 		</header>
 		
 		<!-- time -->
-		<div class="field has-addons">
-			<div class="control">
-				<button name="run-until" class="button is-info">Run Until</button>
+		<nav class="level">
+			<div class="level-left">			
+				<label class="label level-item">   </label>
+				<button name="run-until" class="button is-info level-item">Run Until</button>
+				<input type="number" min=0 id="run-time" class="input is-primary level-item"/>
 			</div>
-			<div class="control">
-				<label class="label">  </label>
+			<div class="level-right">			
+				<button name="run-until-changed" class="button is-info level-item">Run Until Changed</button>
+				<label class="label level-item">   </label>
 			</div>
-			<div class="control">
-				<input type="number" min=0 id="run-time" class="input is-primary"/>
-			</div>
-		</div>
+		</nav>
 
+		<!-- tabs -->
 		<div class="tabs is-centered">
 			<ul>
 				<li><a>Map</a></li>
@@ -34,6 +35,7 @@
 			</ul>
 		</div>
 
+		<!-- log -->
 		<table class="table is-striped is-centered">
 			<thead>
 				<tr>

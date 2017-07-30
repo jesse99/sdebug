@@ -9,18 +9,24 @@ SDEBUG.exited = false;
 
 window.onload = function()
 {
-	var run_until = document.getElementsByName("run-until")[0];
-	run_until.addEventListener("click", on_run_until);
+	var button = document.getElementsByName("run-until")[0];
+	button.addEventListener("click", () => {
+		var input = document.getElementById("run-time");
+		run_until("/time/" + input.value);
+	});
+
+	/* TODO: When we support log filtering we'll need to re-submit the call if the change was filtered out. */
+	button = document.getElementsByName("run-until-changed")[0];
+	button.addEventListener("click", () => {run_until("/run/until/log-changed");});
 
 	set_precision();
 	refresh_header();
 	refresh_table();
 };
 
-function on_run_until()
+function run_until(endpoint)
 {
-	var input = document.getElementById("run-time");
-	makeRequest("POST", "/time/" + input.value)
+	makeRequest("POST", endpoint)
 		.then((data) => {			
 			if (data === "exited") {
 				SDEBUG.exited = true;

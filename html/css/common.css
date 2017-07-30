@@ -41,4 +41,5 @@ table.is-centered
 { 
 	margin-left: auto;
 	margin-right: auto;
+	border-bottom: 1px solid silver;
 }
