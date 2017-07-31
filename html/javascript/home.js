@@ -5,40 +5,44 @@
 var SDEBUG = {}
 SDEBUG.precision = 6;
 SDEBUG.last_logged_time = -1.0;
-SDEBUG.exited = false;
 
 window.onload = function()
 {
-	var button = document.getElementsByName("run-until")[0];
-	button.addEventListener("click", () => {
+	var widget = document.getElementsByName("run-until")[0];
+	widget.addEventListener("click", () => {
 		var input = document.getElementById("run-time");
 		run_until("/time/" + input.value);
 	});
 
 	/* TODO: When we support log filtering we'll need to re-submit the call if the change was filtered out. */
-	button = document.getElementsByName("run-until-changed")[0];
-	button.addEventListener("click", () => {run_until("/run/until/log-changed");});
+	widget = document.getElementsByName("run-until-changed")[0];
+	widget.addEventListener("click", () => {run_until("/run/until/log-changed");});
+
+	widget = document.getElementById("run-time");
+	widget.addEventListener("keyup", (event) => {
+		event.preventDefault();
+		if (event.keyCode == 13) {
+			var button = document.getElementsByName("run-until")[0];
+			button.click();
+		}
+	});
 
 	get_precision();
+	sync_ui();
+};
+
+function sync_ui()
+{
+	refresh_exited();
 	refresh_header();
 	refresh_table();
-};
+}
 
 function run_until(endpoint)
 {
 	makeRequest("POST", endpoint)
-		.then((data) => {			
-			if (data === "exited") {
-				SDEBUG.exited = true;
-
-				var button = document.getElementsByName("run-until")[0];
-				button.appendClass("is-static"); 
-
-				button = document.getElementsByName("run-until-changed")[0];
-				button.appendClass("is-static"); 
-			}
-			refresh_header();
-			refresh_table();
+		.then(() => {			
+			sync_ui();
 		})
 		.catch((err) => {
 			console.error(err);
@@ -56,14 +60,39 @@ function get_precision()
 		});
 }
 
+function refresh_exited()
+{
+	makeRequest("GET", "/exited")
+		.then((data) => {			
+			var widget = document.getElementsByName("run-until")[0];
+			if (data) {
+				widget.appendClass("is-static"); 
+
+				widget = document.getElementById("run-time");
+				widget.setAttribute("disabled", "disabled");
+
+				widget = document.getElementsByName("run-until-changed")[0];
+				widget.appendClass("is-static"); 
+			} else {
+				widget.removeClass("is-static"); 
+
+				widget = document.getElementById("run-time");
+				widget.removeAttribute("disabled");
+
+				widget = document.getElementsByName("run-until-changed")[0];
+				widget.removeClass("is-static"); 
+			}
+		})
+		.catch((err) => {
+			console.error(err);
+		});
+}
+
 function refresh_header()
 {
 	makeRequest("GET", "/time")
 		.then((data) => {			
-			var mesg = format("Simulator @ {0}s", data.toFixed(SDEBUG.precision));
-			if (SDEBUG.exited) {
-				mesg += " (exited)";
-			}
+			const mesg = format("Simulator @ {0}s", data.toFixed(SDEBUG.precision));
 			var header = document.getElementById("header");
 			header.innerHTML = mesg;
 

@@ -20,32 +20,56 @@ function format(pattern, ...args) // TODO: replace this with template literals (
 	);
 }
 
+// Append a new class attribute onto the element.
 Element.prototype.appendClass = function(name)
 {
-  var old = this.getAttribute("class");
-  this.setAttribute("class", old + " " + name); 
+	var old = this.getAttribute("class");
+	if (!old) {
+		old = "";
+	}
+	var parts = old.split(/\s+/);
+	var index = parts.indexOf(name);
+	if (index < 0) {
+		parts.push(name);
+		this.setAttribute("class", parts.join(" ")); 
+	}
+}
+
+// Remove an existing class attribute from the element.
+Element.prototype.removeClass = function(name)
+{
+	var old = this.getAttribute("class");
+	if (!old) {
+		old = "";
+	}
+	var parts = old.split(/\s+/);
+	var index = parts.indexOf(name);
+	if (index >= 0) {
+		parts.splice(index, 1);
+	}
+	this.setAttribute("class", parts.join(" ")); 
 }
 
 // Make an AJAX call and either call resolved with json from the response text or reject with an Error.
 function makeRequest (method, url) {
-  return new Promise((resolved, reject) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open(method, url);
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status <= 299) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            resolved(data);
-          } catch (exception) {
-            reject(new Error(format("{0} {1} result ({2}) didn't parse as json", method, url, xhr.responseText)));
-          }
-      } else {
-        reject(new Error(format("{0} {1} failed with {2} ({3})", method, url, xhr.statusText, xhr.status)));
-      }
-    };
-    xhr.onerror = () => {
-        reject(new Error(format("{0} {1} failed with {2} ({3})", method, url, xhr.statusText, xhr.status)));
-    };
-    xhr.send();
-  });
+	return new Promise((resolved, reject) => {
+		var xhr = new XMLHttpRequest();
+		xhr.open(method, url);
+		xhr.onload = () => {
+			if (xhr.status >= 200 && xhr.status <= 299) {
+				try {
+					const data = JSON.parse(xhr.responseText);
+					resolved(data);
+				} catch (exception) {
+					reject(new Error(format("{0} {1} result ({2}) didn't parse as json", method, url, xhr.responseText)));
+				}
+			} else {
+				reject(new Error(format("{0} {1} failed with {2} ({3})", method, url, xhr.statusText, xhr.status)));
+			}
+		};
+		xhr.onerror = () => {
+			reject(new Error(format("{0} {1} failed with {2} ({3})", method, url, xhr.statusText, xhr.status)));
+		};
+		xhr.send();
+	});
 }
