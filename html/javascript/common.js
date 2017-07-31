@@ -68,7 +68,10 @@ function makeRequest (method, url) {
 			}
 		};
 		xhr.onerror = () => {
-			reject(new Error(format("{0} {1} failed with {2} ({3})", method, url, xhr.statusText, xhr.status)));
+			var err = new Error(format("{0} {1} failed with {2} ({3})", method, url, xhr.statusText, xhr.status));
+			err.statusText = xhr.statusText;
+			err.status = xhr.status;
+			reject(err);
 		};
 		xhr.send();
 	});

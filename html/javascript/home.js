@@ -35,6 +35,7 @@ function sync_ui()
 {
 	refresh_exited();
 	refresh_header();
+	refresh_sub_header();
 	refresh_table();
 }
 
@@ -104,6 +105,24 @@ function refresh_header()
 
 			var header = document.getElementById("header");
 			header.innerHTML = "Simulator @ ?s";
+		});
+}
+
+function refresh_sub_header()
+{
+	makeRequest("GET", "/state/*.display-title")
+		.then((data) => {			
+			var header = document.getElementById("sub-header");
+			header.innerHTML = data[0][1];
+		})
+		.catch((err) => {
+			var header = document.getElementById("sub-header");
+			if (err.status == 400) {
+				header.innerHTML = "";
+			} else {
+				console.error(err);
+				header.innerHTML = "?";
+			}
 		});
 }
 
