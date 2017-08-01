@@ -43,3 +43,18 @@ table.is-centered
 	margin-right: auto;
 	border-bottom: 1px solid silver;
 }
+
+td.added
+{ 
+	color: green;
+}
+
+td.changed
+{ 
+	color: blue;
+}
+
+td.removed
+{ 
+  text-decoration: line-through red;
+}

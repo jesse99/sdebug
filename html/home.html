@@ -11,6 +11,7 @@
 		<header>
 			<h2 id="header" class="has-text-centered title is-2">Simulator @ 10.2s</h2>
 			<h2 id="sub-header" class="has-text-centered title is-4"></h2>
+			<h2 class="title is-2"> </h2>
 		</header>
 		
 		<!-- time -->
@@ -27,17 +28,17 @@
 		</nav>
 
 		<!-- tabs -->
-		<div class="tabs is-centered">
+		<div class="tabs is-centered is-toggle">
 			<ul>
-				<li><a>Map</a></li>
-				<li class="is-active"><a>Log</a></li>
-				<li><a>State</a></li>
-				<li><a>Components</a></li>
+				<li id="map-tab"><a>Map</a></li>
+				<li id="log-tab" class="is-active"><a>Log</a></li>
+				<li id="state-tab"><a>State</a></li>
+				<li id="components-tab"><a>Components</a></li>
 			</ul>
 		</div>
 
 		<!-- log -->
-		<table class="table is-striped is-centered">
+		<table id="log-view" class="table is-striped is-centered">
 			<thead>
 				<tr>
 					<th>Time</th>
@@ -46,9 +47,24 @@
 					<th>Message</th>
 				</tr>
 			</thead>
-			<tbody id="table-body">
+			<tbody id="log-body">
 			</tbody>
 		</table>
+
+		<!-- state -->
+		<table id="state-view" class="table is-striped is-centered">
+			<thead>
+				<tr>
+					<th>Path</th>
+					<th>Value</th>
+				</tr>
+			</thead>
+			<tbody id="state-body">
+			</tbody>
+		</table>
+
+		<p id="map-view" class="is-centered">your map here</p>
+		<p id="components-view" class="is-centered">your components here</p>
 
 		<script src="/javascript/common.js"></script>
 		<script src="/javascript/home.js"></script>

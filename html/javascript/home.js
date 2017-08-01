@@ -5,6 +5,8 @@
 var SDEBUG = {}
 SDEBUG.precision = 6;
 SDEBUG.last_logged_time = -1.0;
+SDEBUG.tab_name = "log";
+SDEBUG.old_state = {};
 
 window.onload = function()
 {
@@ -16,7 +18,7 @@ window.onload = function()
 
 	/* TODO: When we support log filtering we'll need to re-submit the call if the change was filtered out. */
 	widget = document.getElementsByName("run-until-changed")[0];
-	widget.addEventListener("click", () => {run_until("/run/until/log-changed");});
+	widget.addEventListener("click", () => {run_until("/run/until/" + SDEBUG.tab_name + "-changed");});
 
 	widget = document.getElementById("run-time");
 	widget.addEventListener("keyup", (event) => {
@@ -27,16 +29,57 @@ window.onload = function()
 		}
 	});
 
+	widget = document.getElementById("map-tab");
+	widget.addEventListener("click", () => {deselect_tabs("log", "state", "components"); select_tab("map");});
+
+	widget = document.getElementById("log-tab");
+	widget.addEventListener("click", () => {deselect_tabs("map", "state", "components"); select_tab("log");});
+
+	widget = document.getElementById("state-tab");
+	widget.addEventListener("click", () => {deselect_tabs("map", "log", "components"); select_tab("state");});
+
+	widget = document.getElementById("components-tab");
+	widget.addEventListener("click", () => {deselect_tabs("map", "log", "state"); select_tab("components");});
+
+	deselect_tabs("map", "state", "components");
 	get_precision();
 	sync_ui();
 };
+
+function deselect_tabs(...names)
+{
+	for (var name of names) {
+		var tab = document.getElementById(name + "-tab");
+		tab.removeClass("is-active")
+
+		var view = document.getElementById(name + "-view");
+		view.style.display = "none";
+	}
+}
+
+function select_tab(name)
+{
+	SDEBUG.tab_name = name;
+
+	var tab = document.getElementById(name + "-tab");
+	tab.appendClass("is-active")
+
+	var view = document.getElementById(name + "-view");
+	if (name === "log" || name === "state") {
+		view.style.display = "table";
+	} else {
+		view.style.display = "inline";
+	}
+}
 
 function sync_ui()
 {
 	refresh_exited();
 	refresh_header();
 	refresh_sub_header();
-	refresh_table();
+
+	refresh_logs();
+	refresh_states();
 }
 
 function run_until(endpoint)
@@ -126,11 +169,11 @@ function refresh_sub_header()
 		});
 }
 
-function refresh_table()
+function refresh_logs()
 {
 	function append_row(time, path, level, message)
 	{
-		var body = document.getElementById("table-body");
+		var body = document.getElementById("log-body");
 		var row = body.insertRow(-1);
 		row.appendClass(level); 
 		
@@ -156,5 +199,74 @@ function refresh_table()
 		.catch((err) => {
 			console.error(err);
 			append_row(SDEBUG.last_logged_time, "?", "Error", "AJAX failed");
+		});
+}
+
+function refresh_states()
+{
+	function append_row(path, value, klass)
+	{
+		var body = document.getElementById("state-body");
+		var row = body.insertRow(-1);
+		
+		var cell = row.insertCell(-1);
+		cell.appendChild(document.createTextNode(path));
+		cell.appendClass("leftmost"); 
+		if (klass === "removed") {
+			cell.appendClass("removed"); 
+		}
+
+		cell = row.insertCell(-1);
+		cell.appendChild(document.createTextNode(value));
+		cell.appendClass("rightmost"); 
+
+		if (klass !== "") {
+			cell.appendClass(klass); 
+		}
+	}
+
+	makeRequest("GET", "/state/*")
+		.then((state) => {	
+			var body = document.getElementById("state-body");
+			while (body.rows.length > 0) {
+				body.deleteRow(-1);
+			}
+
+			var new_state = {};
+			var updated = false;
+			var path = "";
+			for (var row of state) {
+				path = row[0];
+				var value = row[1];
+				if (!path.includes(".display-")) {
+					var klass = "";
+					if (!(path in SDEBUG.old_state))
+						klass = "added";
+					else if (SDEBUG.old_state[path] !== value)
+						klass = "changed";
+					append_row(path, value, klass);
+					new_state[path] = value;
+
+					if (klass !== "")
+						updated = true;
+				}
+			}
+
+			for (path in SDEBUG.old_state)
+			{
+				if (!(path in new_state)) {
+					append_row(path, SDEBUG.old_state[path], "removed");
+					updated = true;
+				}
+			}
+
+			SDEBUG.old_state = new_state;
+
+			if (!updated && SDEBUG.tab_name == "state")
+				run_until("/run/until/state-changed");
+		})
+		.catch((err) => {
+			console.error(err);
+			append_row("?", "AJAX failed");
 		});
 }
