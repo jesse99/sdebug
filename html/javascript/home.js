@@ -235,12 +235,19 @@ function refresh_states()
 	{
 		var body = document.getElementById("state-body");
 		var row = body.insertRow(-1);
+
+		var parts = path.split(".");
+		var key = parts.pop();
+		var component = parts.join(".");
 		
 		var cell = row.insertCell(-1);
-		cell.appendChild(document.createTextNode(path));
+		cell.appendChild(document.createTextNode(component));
 		cell.appendClass("leftmost"); 
 		if (klass === "removed")
 			cell.appendClass("removed"); 
+
+		cell = row.insertCell(-1);
+		cell.appendChild(document.createTextNode(key));
 
 		cell = row.insertCell(-1);
 		cell.appendChild(document.createTextNode(value));
