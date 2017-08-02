@@ -215,9 +215,23 @@ function refresh_logs()
 		});
 }
 
+function edit_value(path, kind, old)
+{
+	var value = prompt("New value: ", old);
+	if (value !== null) {
+		makeRequest("POST", format("/state/{0}/{1}/{2}", kind, path, value))
+			.then(() => {			
+				refresh_states();
+			})
+			.catch((err) => {
+				alert(format("POST failed: {0}", err));
+			});
+	}
+}
+
 function refresh_states()
 {
-	function append_row(path, value, klass)
+	function append_row(path, value, klass, kind)
 	{
 		var body = document.getElementById("state-body");
 		var row = body.insertRow(-1);
@@ -225,17 +239,17 @@ function refresh_states()
 		var cell = row.insertCell(-1);
 		cell.appendChild(document.createTextNode(path));
 		cell.appendClass("leftmost"); 
-		if (klass === "removed") {
+		if (klass === "removed")
 			cell.appendClass("removed"); 
-		}
 
 		cell = row.insertCell(-1);
 		cell.appendChild(document.createTextNode(value));
 		cell.appendClass("rightmost"); 
 
-		if (klass !== "") {
+		if (klass !== "")
 			cell.appendClass(klass); 
-		}
+		if (klass !== "removed")
+			cell.addEventListener("click", () => {edit_value(path, kind, value);});
 	}
 
 	makeRequest("GET", "/state/*")
@@ -251,13 +265,14 @@ function refresh_states()
 			for (var row of state) {
 				path = row[0];
 				var value = row[1];
+				var kind = row[2];
 				if (show_state(path)) {
 					var klass = "";
 					if (!(path in SDEBUG.old_state))
 						klass = "added";
 					else if (SDEBUG.old_state[path] !== value)
 						klass = "changed";
-					append_row(path, value, klass);
+					append_row(path, value, klass, kind);
 					new_state[path] = value;
 
 					if (klass !== "")

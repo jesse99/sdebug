@@ -58,3 +58,8 @@ td.removed
 { 
   text-decoration: line-through red;
 }
+
+footer
+{ 
+	font-style: italic;
+}
