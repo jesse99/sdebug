@@ -41,6 +41,9 @@ window.onload = function()
 	widget = document.getElementById("components-tab");
 	widget.addEventListener("click", () => {deselect_tabs("map", "log", "state"); select_tab("components");});
 
+	widget = document.getElementById("show-display-state");
+	widget.addEventListener("click", () => {SDEBUG.old_state = {}; refresh_states();});
+
 	deselect_tabs("map", "state", "components");
 	get_precision();
 	sync_ui();
@@ -54,6 +57,11 @@ function deselect_tabs(...names)
 
 		var view = document.getElementById(name + "-view");
 		view.style.display = "none";
+
+		if (name == "state") {
+			view = document.getElementById("show-display-view");
+			view.style.display = "none";
+		}
 	}
 }
 
@@ -69,6 +77,11 @@ function select_tab(name)
 		view.style.display = "table";
 	} else {
 		view.style.display = "inline";
+	}
+
+	if (name == "state") {
+		view = document.getElementById("show-display-view");
+		view.style.display = "block";
 	}
 }
 
@@ -238,7 +251,7 @@ function refresh_states()
 			for (var row of state) {
 				path = row[0];
 				var value = row[1];
-				if (!path.includes(".display-")) {
+				if (show_state(path)) {
 					var klass = "";
 					if (!(path in SDEBUG.old_state))
 						klass = "added";
@@ -269,4 +282,10 @@ function refresh_states()
 			console.error(err);
 			append_row("?", "AJAX failed");
 		});
+}
+
+function show_state(path)
+{
+	var checkbox = document.getElementById("show-display-state");
+	return checkbox.checked || !path.includes(".display-");
 }
