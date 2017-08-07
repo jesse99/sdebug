@@ -92,16 +92,17 @@ function select_tab(name)
 		view.style.display = "table";
 
 	} else if (name == "map") {
-		console.error("need to set callbacks");
-		view.style.display = "inline";
+		SDEBUG.get_current_state = get_current_map;
+		SDEBUG.current_state_has_changed = state_has_changed;
+		SDEBUG.apply_current_state = apply_map;
+		initialize_map();
+		view.style.display = "block";
 
 	} else if (name == "state") {
 		SDEBUG.get_current_state = get_current_state;
 		SDEBUG.current_state_has_changed = state_has_changed;
 		SDEBUG.apply_current_state = apply_state;
 		initialize_state();
-		view.style.display = "table";
-
 		view = document.getElementById("show-display-view");
 		view.style.display = "block";
 
@@ -293,7 +294,7 @@ function apply_log(new_state)
 
 // ---- State ---------------------------------------------------------------------------
 // For state old and new state will be [(path, value, kind)] where kind is "int", "float", or "string"
-// and the rows sorted by path.
+// and the rows are sorted by path.
 function initialize_state()
 {
 	SDEBUG.old_state = [];
@@ -301,7 +302,7 @@ function initialize_state()
 
 function get_current_state()
 {
-	return makeRequest("GET", "/state/*");
+	return makeRequest("GET", "/state/**");
 }
 
 function state_has_changed(new_state)
@@ -407,7 +408,7 @@ function show_state(path)
 }
 
 // ---- Map -----------------------------------------------------------------------------
-function init_map()	// TODO: this should be an initialize method
+function init_map()
 {
 	makeRequest("GET", "/state/*.display-size-x")
 		.then((data) => {			
@@ -416,20 +417,68 @@ function init_map()	// TODO: this should be an initialize method
 				.then((data2) => {			
 					const height = data2[0][1];
 					SDEBUG.draw = SVG("map-view").size("100%", 1000);
-					SDEBUG.draw.viewbox(0, 0, width, height);
-					refresh_map()
+					SDEBUG.draw.viewbox(0, 0, 1.1*width, 1.1*height);	// we add a bit extra so components at the edges are still visible
 				});
 		})
 		.catch((err) => {
 			// TODO: disable the map tab?
+			console.error("init_map failed: " + err)
 		});
 }
 
-function refresh_map()
+// For map old and new state will be [(path, value, kind)] where kind is "int", "float", or "string"
+// and the rows are sorted by path.
+function initialize_map()
 {
-	if (SDEBUG.draw) {
-		SDEBUG.draw.clear();
-		SDEBUG.draw.rect(25, 25).attr({"fill": "#f06"});
-	}
+	SDEBUG.old_state = [];
+	SDEBUG.draw.clear();
 }
 
+function get_current_map()
+{
+	return makeRequest("GET", "/state/*.display-*");
+}
+
+function apply_map(new_state)
+{
+	function draw_component(state, component_name)
+	{
+		// TODO: If there is a display-icon value then use that instead of display-name.
+		const x = state[component_name + ".display-location-x"];
+		const y = state[component_name + ".display-location-y"];
+
+		if (x && y && SDEBUG.draw) {
+			var name = state[component_name + ".display-name"];
+			if (name) {
+				var details = state[component_name + ".display-details"];
+				var color = state[component_name + ".display-color"];
+				if (!color)
+					color = "black";
+
+				SDEBUG.draw.text((add) => {
+					add.move(x, y).tspan(name).fill(color).font({"anchor": "middle", "size": 4})
+					.tspan(details).move(x, y).dy(1).fill(color).font({"anchor": "middle", "size": 1});
+				});
+			}
+		}
+	}
+
+	SDEBUG.draw.clear();
+
+	var names = new Set();
+	var state = {};
+	var name = "";
+	for (var row of new_state) {
+		var path = row[0];
+		var value = row[1];
+		var parts = path.split(".");
+		name = parts[0];
+		names.add(name);
+		state[path] = value;
+	}
+
+	for (name of names)
+	{
+		draw_component(state, name)
+	}
+}
