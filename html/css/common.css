@@ -59,6 +59,15 @@ td.removed
   text-decoration: line-through red;
 }
 
+.components-title
+{ 
+	list-style-type: disc;
+	list-style-position: outside;
+	display: list-item;
+	white-space: pre;
+	margin-left:3em;
+}
+
 footer
 { 
 	font-style: italic;

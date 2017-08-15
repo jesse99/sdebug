@@ -80,11 +80,7 @@ function select_tab(name)
 	tab.appendClass("is-active")
 
 	var view = document.getElementById(name + "-view");
-	if (name == "components") {
-		console.error("need to set callbacks");
-		view.style.display = "inline";
-
-	} else if (name == "log") {
+	if (name == "log") {
 		SDEBUG.get_current_state = get_current_log;
 		SDEBUG.current_state_has_changed = log_has_changed;
 		SDEBUG.apply_current_state = apply_log;
@@ -103,7 +99,16 @@ function select_tab(name)
 		SDEBUG.current_state_has_changed = state_has_changed;
 		SDEBUG.apply_current_state = apply_state;
 		initialize_state();
-		view = document.getElementById("show-display-view");
+		view.style.display = "table";
+
+		var subview = document.getElementById("show-display-view");
+		subview.style.display = "block";
+
+	} else if (name == "components") {
+		SDEBUG.get_current_state = get_current_components;
+		SDEBUG.current_state_has_changed = components_has_changed;
+		SDEBUG.apply_current_state = apply_components;
+		initialize_components();
 		view.style.display = "block";
 
 	} else {
@@ -392,12 +397,12 @@ function edit_value(path, kind, old)
 	var value = prompt("New value: ", old);
 	if (value !== null) {
 		makeRequest("POST", format("/state/{0}/{1}/{2}", kind, path, value))
-			.then(() => {			
-				update_tab_view(null);
-			})
-			.catch((err) => {
-				alert(format("POST failed: {0}", err));
-			});
+		.then(() => {			
+			update_tab_view(null);
+		})
+		.catch((err) => {
+			alert(format("POST failed: {0}", err));
+		});
 	}
 }
 
@@ -405,6 +410,83 @@ function show_state(path)
 {
 	var checkbox = document.getElementById("show-display-state");
 	return checkbox.checked || !path.includes(".display-");
+}
+
+ // ---- Components ---------------------------------------------------------------------------
+// For components old and new state will be an object of the form {name: "world", details: "blah",
+// children: [entry]} where entries look exactly like the top-level object.
+function initialize_components()
+{
+	SDEBUG.old_state = {"name": "?", "details": "", "children": []};
+}
+
+function get_current_components()
+{
+	return makeRequest("GET", "/components");
+}
+
+function components_has_changed(new_state)
+{
+	function flatten(result, prefix, state)
+	{
+		const path = prefix + "." + state.name;
+		const line = path + " - " + state.details;
+		result.push(line);
+
+		for (const child of state.children) {
+			flatten(result, path, child);
+		}
+	}
+
+	var old_flat = [];
+	var new_flat = [];
+
+	flatten(old_flat, "", SDEBUG.old_state);
+	flatten(new_flat, "", new_state);
+
+	old_flat = old_flat.sort();
+	new_flat = new_flat.sort();
+
+	if (new_flat.length != old_flat.length)
+		return true;
+
+	for (var i = 0; i < new_flat.length; i++) {
+		if (new_flat[i] != old_flat[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function apply_components(new_state)
+{
+	function append_child(prefix, parent, entry)
+	{
+		var title = prefix + entry.name;
+		if (entry.details) {
+			title += " - " + entry.details;
+		}
+
+		var item = document.createElement("li");
+		var link = document.createTextNode(title);
+		item.appendClass("components-title"); 
+		item.appendChild(link);
+		parent.appendChild(item);
+
+		for (var child of entry.children) {
+			append_child(prefix + "    ", parent, child);
+		}
+	}
+
+	var body = document.getElementById("components-body");
+	while (body.firstChild) {
+		body.removeChild(body.firstChild);
+	}
+
+	// TODO:
+	// use a disclosure widget if there are children?
+	// use links
+	append_child("", body, new_state)
 }
 
 // ---- Map -----------------------------------------------------------------------------
