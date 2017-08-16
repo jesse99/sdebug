@@ -1,6 +1,6 @@
 "use strict";
 
-/* global SVG, makeRequest, format:true */
+/* global SVG, createTag, makeRequest, format:true */
 
 var SDEBUG = {}
 SDEBUG.precision = 6;
@@ -462,15 +462,23 @@ function apply_components(new_state)
 {
 	function append_child(prefix, parent, entry)
 	{
-		var title = prefix + entry.name;
+		// <li><span> <span>prefix</span> <a class="button is-link">name</a> <span>details</span> </span></li>
+		var prelude = createTag("span", prefix, ["components-item"]);
+		var button = createTag("span", entry.name, ["button", "is-link"]);
+		var epilog = null;
 		if (entry.details) {
-			title += " - " + entry.details;
+			epilog = createTag("span", entry.details, ["tag", "is-white", "is-large", "components-details"]);
 		}
 
-		var item = document.createElement("li");
-		var link = document.createTextNode(title);
-		item.appendClass("components-title"); 
-		item.appendChild(link);
+		var span = createTag("span", "", ["components-item"]);
+		span.appendChild(prelude);
+		span.appendChild(button);
+		if (epilog) {
+			span.appendChild(epilog);
+		}
+
+		var item = createTag("li", "", ["components-title"]);
+		item.appendChild(span);
 		parent.appendChild(item);
 
 		for (var child of entry.children) {

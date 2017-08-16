@@ -1,7 +1,7 @@
 // Misc utility functions.
 "use strict";
 
-/* exported makeRequest */
+/* exported createTag, makeRequest */
 
 // Replaces {0} with argument 0, {1} with argument 1, etc.
 // Argument index can be appended with ":j" to print the argument as json.
@@ -48,6 +48,25 @@ Element.prototype.removeClass = function(name)
 		parts.splice(index, 1);
 	}
 	this.setAttribute("class", parts.join(" ")); 
+}
+
+// Create a new HTML element with optional inner text and classes.
+function createTag(tagName, body, classes)
+{
+	var element = document.createElement(tagName);
+
+	if (body) {
+		var text = document.createTextNode(body);
+		element.appendChild(text);
+	}
+
+	if (classes) {
+		for (var klass of classes) {
+			element.appendClass(klass); 
+		}
+	}
+
+	return element;
 }
 
 // Make an AJAX call and either call resolved with json from the response text or reject with an Error.

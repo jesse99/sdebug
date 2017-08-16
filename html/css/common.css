@@ -61,11 +61,20 @@ td.removed
 
 .components-title
 { 
-	list-style-type: disc;
-	list-style-position: outside;
+	list-style-type: none;
 	display: list-item;
-	white-space: pre;
 	margin-left:3em;
+}
+
+span.components-item
+{
+	white-space:nowrap;
+	white-space: pre;
+}
+
+span.components-details
+{
+	font-style: italic;
 }
 
 footer
