@@ -15,6 +15,11 @@ SDEBUG.old_state = {};
 
 window.onload = function()
 {
+	if (window.name) {
+		document.title = window.name;
+	} else {
+		document.title = "Simulator";
+	}
 	init_map();
 
 	var widget = document.getElementsByName("run-until")[0];
@@ -192,9 +197,14 @@ function refresh_exited()
 
 function refresh_header()
 {
+	var prefix = "Simulator";
+	if (window.name) {
+		prefix = window.name;
+	}
+
 	makeRequest("GET", "/time")
 		.then((data) => {			
-			const mesg = format("Simulator @ {0}s", data.toFixed(SDEBUG.precision));
+			const mesg = format("{0} @ {1}s", prefix, data.toFixed(SDEBUG.precision));
 			var header = document.getElementById("header");
 			header.innerHTML = mesg;
 
@@ -205,7 +215,7 @@ function refresh_header()
 			console.error(err);
 
 			var header = document.getElementById("header");
-			header.innerHTML = "Simulator @ ?s";
+			header.innerHTML = format("{0} @ ?s", prefix);
 		});
 }
 
@@ -312,13 +322,16 @@ function get_current_state()
 
 function state_has_changed(new_state)
 {
-	if (new_state.length != SDEBUG.old_state.length)
+	const new_filtered = new_state.filter((s) => {return show_state(s[0]);});
+	const old_filtered = SDEBUG.old_state.filter((s) => {return show_state(s[0]);});
+
+	if (new_filtered.length != old_filtered.length)
 		return true;
 
-	for (var i = 0; i < new_state.length; i++) {
-		if (new_state[i][0] !== SDEBUG.old_state[i][0])
+	for (var i = 0; i < new_filtered.length; i++) {
+		if (new_filtered[i][0] !== old_filtered[i][0])
 			return true;
-		else if (new_state[i][1] !== SDEBUG.old_state[i][1])
+		else if (new_filtered[i][1] !== old_filtered[i][1])
 			return true;
 	}
 
@@ -408,8 +421,17 @@ function edit_value(path, kind, old)
 
 function show_state(path)
 {
+	var show = false;
 	var checkbox = document.getElementById("show-display-state");
-	return checkbox.checked || !path.includes(".display-");
+	if (checkbox.checked || !path.includes(".display-")) {
+		if (!window.name) {
+			show = true;
+		} else {
+			const prefix = window.name + ".";
+			show = path.startsWith(prefix);
+		}
+	}
+	return show;
 }
 
  // ---- Components ---------------------------------------------------------------------------
@@ -460,7 +482,7 @@ function components_has_changed(new_state)
 
 function apply_components(new_state)
 {
-	function append_child(prefix, parent, entry)
+	function append_child(prefix, path, parent, entry)
 	{
 		// <li><span> <span>prefix</span> <a class="button is-link">name</a> <span>details</span> </span></li>
 		var prelude = createTag("span", prefix, ["components-item"]);
@@ -469,6 +491,10 @@ function apply_components(new_state)
 		if (entry.details) {
 			epilog = createTag("span", entry.details, ["tag", "is-white", "is-large", "components-details"]);
 		}
+
+		button.addEventListener("click", () => {
+			window.open("home.html", path);
+		});
 
 		var span = createTag("span", "", ["components-item"]);
 		span.appendChild(prelude);
@@ -482,7 +508,13 @@ function apply_components(new_state)
 		parent.appendChild(item);
 
 		for (var child of entry.children) {
-			append_child(prefix + "    ", parent, child);
+			var childPath = null;	// little funky because we don't want path to be "" for the root object
+			if (path) {
+				childPath = path + "." + child.name;
+			} else {
+				childPath = child.name;
+			}
+			append_child(prefix + "    ", childPath, parent, child);
 		}
 	}
 
@@ -491,10 +523,8 @@ function apply_components(new_state)
 		body.removeChild(body.firstChild);
 	}
 
-	// TODO:
-	// use a disclosure widget if there are children?
-	// use links
-	append_child("", body, new_state)
+	// TODO: use a disclosure widget if there are children?
+	append_child("", "", body, new_state)
 }
 
 // ---- Map -----------------------------------------------------------------------------
