@@ -94,7 +94,7 @@ function select_tab(name)
 
 	} else if (name == "map") {
 		SDEBUG.get_current_state = get_current_map;
-		SDEBUG.current_state_has_changed = state_has_changed;
+		SDEBUG.current_state_has_changed = map_has_changed;
 		SDEBUG.apply_current_state = apply_map;
 		initialize_map();
 		view.style.display = "block";
@@ -257,7 +257,7 @@ function update_tab_view(on_changed)
 }
 
 // ---- Log -----------------------------------------------------------------------------
-// For logs old and new state will be [time, path, level, message].
+// For logs old and new state will be [{time, path, level, message}].
 function initialize_log()
 {
 	SDEBUG.old_state = [];
@@ -274,7 +274,10 @@ function get_current_log()
 
 function log_has_changed(new_state)
 {
-	return new_state.length > 0;
+	const new_filtered = new_state.filter((s) => show_log(s));
+	const old_filtered = SDEBUG.old_state.filter((s) => show_log(s));
+
+	return new_filtered.length > old_filtered.length;
 }
 
 function apply_log(new_state)
@@ -299,12 +302,27 @@ function apply_log(new_state)
 
 	var last = SDEBUG.last_logged_time;
 	for (var row of new_state) {
-		if (row.time > SDEBUG.last_logged_time) {	
+		if (show_log(row)) {	
 			append_row(row.time, row.path, row.level, row.message);
 			last = row.time;
 		}
 	}
 	SDEBUG.last_logged_time = last;
+}
+
+function show_log(row)
+{
+	var show = false;
+
+	if (row.time > SDEBUG.last_logged_time) {	
+		if (!window.name) {
+			show = true;
+		} else {
+			show = row.path == window.name;
+		}
+	}
+
+	return show;
 }
 
 // ---- State ---------------------------------------------------------------------------
@@ -322,8 +340,8 @@ function get_current_state()
 
 function state_has_changed(new_state)
 {
-	const new_filtered = new_state.filter((s) => {return show_state(s[0]);});
-	const old_filtered = SDEBUG.old_state.filter((s) => {return show_state(s[0]);});
+	const new_filtered = new_state.filter((s) => show_state(s[0]));
+	const old_filtered = SDEBUG.old_state.filter((s) => show_state(s[0]));
 
 	if (new_filtered.length != old_filtered.length)
 		return true;
@@ -435,11 +453,11 @@ function show_state(path)
 }
 
  // ---- Components ---------------------------------------------------------------------------
-// For components old and new state will be an object of the form {name: "world", details: "blah",
+// For components old and new state will be an object of the form {path: "world", name: "world", details: "blah",
 // children: [entry]} where entries look exactly like the top-level object.
 function initialize_components()
 {
-	SDEBUG.old_state = {"name": "?", "details": "", "children": []};
+	SDEBUG.old_state = {"path": "?", "name": "?", "details": "", "children": []};
 }
 
 function get_current_components()
@@ -449,22 +467,23 @@ function get_current_components()
 
 function components_has_changed(new_state)
 {
-	function flatten(result, prefix, state)
+	function flatten(result, state)
 	{
-		const path = prefix + "." + state.name;
-		const line = path + " - " + state.details;
-		result.push(line);
+		if (show_component(state)) {
+			const line = state.path + " - " + state.details;
+			result.push(line);
 
-		for (const child of state.children) {
-			flatten(result, path, child);
+			for (const child of state.children) {
+				flatten(result, child);
+			}
 		}
 	}
 
 	var old_flat = [];
 	var new_flat = [];
 
-	flatten(old_flat, "", SDEBUG.old_state);
-	flatten(new_flat, "", new_state);
+	flatten(old_flat, SDEBUG.old_state);
+	flatten(new_flat, new_state);
 
 	old_flat = old_flat.sort();
 	new_flat = new_flat.sort();
@@ -482,39 +501,35 @@ function components_has_changed(new_state)
 
 function apply_components(new_state)
 {
-	function append_child(prefix, path, parent, entry)
+	function append_child(prefix, parent, entry)
 	{
-		// <li><span> <span>prefix</span> <a class="button is-link">name</a> <span>details</span> </span></li>
-		var prelude = createTag("span", prefix, ["components-item"]);
-		var button = createTag("span", entry.name, ["button", "is-link"]);
-		var epilog = null;
-		if (entry.details) {
-			epilog = createTag("span", entry.details, ["tag", "is-white", "is-large", "components-details"]);
-		}
-
-		button.addEventListener("click", () => {
-			window.open("home.html", path);
-		});
-
-		var span = createTag("span", "", ["components-item"]);
-		span.appendChild(prelude);
-		span.appendChild(button);
-		if (epilog) {
-			span.appendChild(epilog);
-		}
-
-		var item = createTag("li", "", ["components-title"]);
-		item.appendChild(span);
-		parent.appendChild(item);
-
-		for (var child of entry.children) {
-			var childPath = null;	// little funky because we don't want path to be "" for the root object
-			if (path) {
-				childPath = path + "." + child.name;
-			} else {
-				childPath = child.name;
+		if (show_component(entry)) {
+			// <li><span> <span>prefix</span> <a class="button is-link">name</a> <span>details</span> </span></li>
+			var prelude = createTag("span", prefix, ["components-item"]);
+			var button = createTag("span", entry.name, ["button", "is-link"]);
+			var epilog = null;
+			if (entry.details) {
+				epilog = createTag("span", entry.details, ["tag", "is-white", "is-large", "components-details"]);
 			}
-			append_child(prefix + "    ", childPath, parent, child);
+
+			button.addEventListener("click", () => {
+				window.open("home.html", entry.path);
+			});
+
+			var span = createTag("span", "", ["components-item"]);
+			span.appendChild(prelude);
+			span.appendChild(button);
+			if (epilog) {
+				span.appendChild(epilog);
+			}
+
+			var item = createTag("li", "", ["components-title"]);
+			item.appendChild(span);
+			parent.appendChild(item);
+
+			for (var child of entry.children) {
+				append_child(prefix + "    ", parent, child);
+			}
 		}
 	}
 
@@ -524,7 +539,25 @@ function apply_components(new_state)
 	}
 
 	// TODO: use a disclosure widget if there are children?
-	append_child("", "", body, new_state)
+	append_child("", body, new_state)
+}
+
+// state.path			window.name
+// world				world.foo
+// world.foo
+// world.foo.bar
+// world.blip
+function show_component(state)
+{
+	var show = false;
+	if (!window.name) {
+		show = true;
+	} else {
+		show = window.name.startsWith(state.path + ".") ||	// show parents
+			state.path == window.name ||					// the component
+			state.path.startsWith(window.name + ".");		// and children
+	}
+	return show;
 }
 
 // ---- Map -----------------------------------------------------------------------------
@@ -561,17 +594,17 @@ function get_current_map()
 
 function apply_map(new_state)
 {
-	function draw_component(state, component_name)
+	function draw_component(state, component_path)
 	{
 		// TODO: If there is a display-icon value then use that instead of display-name.
-		const x = state[component_name + ".display-location-x"];
-		const y = state[component_name + ".display-location-y"];
+		const x = state[component_path + ".display-location-x"];
+		const y = state[component_path + ".display-location-y"];
 
 		if (x && y && SDEBUG.draw) {
-			var name = state[component_name + ".display-name"];
+			var name = state[component_path + ".display-name"];
 			if (name) {
-				var details = state[component_name + ".display-details"];
-				var color = state[component_name + ".display-color"];
+				var details = state[component_path + ".display-details"];
+				var color = state[component_path + ".display-color"];
 				if (!color)
 					color = "black";
 
@@ -585,20 +618,43 @@ function apply_map(new_state)
 
 	SDEBUG.draw.clear();
 
-	var names = new Set();
+	var paths = new Set();
 	var state = {};
-	var name = "";
+	//var name = "";
 	for (var row of new_state) {
 		var path = row[0];
 		var value = row[1];
+
 		var parts = path.split(".");
-		name = parts[0];
-		names.add(name);
+		parts.pop();
+		paths.add(parts.join("."));
 		state[path] = value;
 	}
 
-	for (name of names)
-	{
-		draw_component(state, name)
+	for (var p of paths) {
+		draw_component(state, p)
 	}
+}
+
+function map_has_changed(new_state)
+{
+	const new_filtered = new_state.filter((s) => display_state(s[0]));
+	const old_filtered = SDEBUG.old_state.filter((s) => display_state(s[0]));
+
+	if (new_filtered.length != old_filtered.length)
+		return true;
+
+	for (var i = 0; i < new_filtered.length; i++) {
+		if (new_filtered[i][0] !== old_filtered[i][0])
+			return true;
+		else if (new_filtered[i][1] !== old_filtered[i][1])
+			return true;
+	}
+
+	return false;
+}
+
+function display_state(path)
+{
+	return path.includes(".display-");
 }
