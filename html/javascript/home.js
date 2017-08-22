@@ -22,9 +22,10 @@ window.onload = function()
 	}
 	init_map();
 
-	window.addEventListener("focus", () => {
-		on_focused();
-	});
+	window.addEventListener("focus", () => {sync_ui(null);});
+
+	var select = document.getElementById("log-levels");
+	select.addEventListener("change", () => {initialize_log(); clear_log(); sync_ui(null);});
 
 	var widget = document.getElementsByName("run-until")[0];
 	widget.addEventListener("click", () => {
@@ -79,11 +80,6 @@ function deselect_tabs(...names)
 			view.style.display = "none";
 		}
 	}
-}
-
-function on_focused()
-{
-	sync_ui(null);
 }
 
 function select_tab(name)
@@ -266,11 +262,20 @@ function update_tab_view(on_changed)
 }
 
 // ---- Log -----------------------------------------------------------------------------
-// For logs old and new state will be [{time, path, level, message}].
+// For logs old and new state will be [{time, path, level, index, message}] where index is
+// the log level index, e.g. 0 for error, 1 for warning, etc.
 function initialize_log()
 {
 	SDEBUG.old_state = [];
 	SDEBUG.last_logged_time = -1.0;
+}
+
+function clear_log()
+{
+	var body = document.getElementById("log-body");
+	while (body.rows.length > 0) {
+		body.deleteRow(-1);
+	}	
 }
 
 function get_current_log()
@@ -286,7 +291,7 @@ function log_has_changed(new_state)
 	const new_filtered = new_state.filter((s) => show_log(s));
 	const old_filtered = SDEBUG.old_state.filter((s) => show_log(s));
 
-	return new_filtered.length > old_filtered.length;
+	return new_filtered.length != old_filtered.length;
 }
 
 function apply_log(new_state)
@@ -330,6 +335,10 @@ function show_log(row)
 			show = row.path == window.name;
 		}
 	}
+
+	var select = document.getElementById("log-levels");
+	var visible = select.options[select.selectedIndex].value;
+	show = show && row.index <= visible;
 
 	return show;
 }
