@@ -22,6 +22,10 @@ window.onload = function()
 	}
 	init_map();
 
+	window.addEventListener("focus", () => {
+		on_focused();
+	});
+
 	var widget = document.getElementsByName("run-until")[0];
 	widget.addEventListener("click", () => {
 		var input = document.getElementById("run-time");
@@ -75,6 +79,11 @@ function deselect_tabs(...names)
 			view.style.display = "none";
 		}
 	}
+}
+
+function on_focused()
+{
+	sync_ui(null);
 }
 
 function select_tab(name)
