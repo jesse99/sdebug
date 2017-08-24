@@ -628,7 +628,9 @@ function apply_map(new_state)
 
 				var text = SDEBUG.draw.text((add) => {
 					add.move(x, y).tspan(name).fill(color).font({"anchor": "middle", "size": 4})
-					.tspan(details).move(x, y).dy(1).fill(color).font({"anchor": "middle", "size": 1});
+					if (details) {
+						add.tspan(details).move(x, y).dy(1).fill(color).font({"anchor": "middle", "size": 1});
+					}
 				});
 				text.click(() => {window.open("home.html", component_path);});
 			}
