@@ -78,6 +78,9 @@ function deselect_tabs(...names)
 		if (name == "state") {
 			view = document.getElementById("show-display-view");
 			view.style.display = "none";
+		} else if (name == "log") {
+			view = document.getElementById("toggle-log-level");
+			view.style.display = "none";
 		}
 	}
 }
@@ -97,6 +100,9 @@ function select_tab(name)
 		initialize_log();
 		view.style.display = "table";
 
+		var ll = document.getElementById("toggle-log-level");
+		ll.style.display = "block";
+
 	} else if (name == "map") {
 		SDEBUG.get_current_state = get_current_map;
 		SDEBUG.current_state_has_changed = map_has_changed;
@@ -111,8 +117,8 @@ function select_tab(name)
 		initialize_state();
 		view.style.display = "table";
 
-		var subview = document.getElementById("show-display-view");
-		subview.style.display = "block";
+		var dv = document.getElementById("show-display-view");
+		dv.style.display = "block";
 
 	} else if (name == "components") {
 		SDEBUG.get_current_state = get_current_components;
