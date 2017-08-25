@@ -594,7 +594,10 @@ function init_map()
 				.then((data2) => {			
 					const height = data2[0][1];
 					SDEBUG.draw = SVG("map-view").size("100%", 1000);
-					SDEBUG.draw.viewbox(0, 0, 1.1*width, 1.1*height);	// we add a bit extra so components at the edges are still visible
+					SDEBUG.draw.viewbox(0, 0, width, height);
+
+					SDEBUG.map_width = width;
+					SDEBUG.map_height = height;
 				});
 		})
 		.catch((err) => {
@@ -624,7 +627,7 @@ function apply_map(new_state)
 		const x = state[component_path + ".display-location-x"];
 		const y = state[component_path + ".display-location-y"];
 
-		if (x && y && SDEBUG.draw) {
+		if (x && y) {
 			var name = state[component_path + ".display-name"];
 			if (name) {
 				var details = state[component_path + ".display-details"];
@@ -643,23 +646,25 @@ function apply_map(new_state)
 		}
 	}
 
-	SDEBUG.draw.clear();
+	if (SDEBUG.draw) {
+		SDEBUG.draw.clear();
 
-	var paths = new Set();
-	var state = {};
-	//var name = "";
-	for (var row of new_state) {
-		var path = row[0];
-		var value = row[1];
+		var paths = new Set();
+		var state = {};
+		for (var row of new_state) {
+			var path = row[0];
+			var value = row[1];
 
-		var parts = path.split(".");
-		parts.pop();
-		paths.add(parts.join("."));
-		state[path] = value;
-	}
+			var parts = path.split(".");
+			parts.pop();
+			paths.add(parts.join("."));
+			state[path] = value;
+		}
 
-	for (var p of paths) {
-		draw_component(state, p)
+		SDEBUG.draw.rect(SDEBUG.map_width, SDEBUG.map_height).fill("seashell")	// TODO: make this a diplay state variable
+		for (var p of paths) {
+			draw_component(state, p)
+		}
 	}
 }
 
