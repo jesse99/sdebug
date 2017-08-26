@@ -15,6 +15,7 @@ SDEBUG.old_state = {};
 
 window.onload = function()
 {
+	// TODO: Would be nice to support favicon.ico
 	if (window.name) {
 		document.title = window.name;
 	} else {
@@ -587,6 +588,9 @@ function show_component(state)
 // ---- Map -----------------------------------------------------------------------------
 function init_map()
 {
+	// TODO: We should support units (and maybe draw some sort of ruler which would be
+	// especially nice if we support zooming). We could default to some sort of component 
+	// scale(first component is at 0,0 next at 1,0 etc).
 	makeRequest("GET", "/state/*.display-size-x")
 		.then((data) => {			
 			const width = data[0][1];
