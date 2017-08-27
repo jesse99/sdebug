@@ -9,6 +9,7 @@ Clicking on a component in the map or components tabs will pop up a new browser 
 for just that component.
 
 To use sdebug you need to startup a simulation with a path to sdebug's main page:
+
 		./target/debug/examples/battle_bots --home=../sdebug/html/home.html
 
 And then navigate to the URL below using a web browser:
