@@ -12,5 +12,5 @@ To use sdebug you need to startup a simulation with a path to sdebug's main page
 
 		./target/debug/examples/battle_bots --home=../sdebug/html/home.html
 
-And then navigate to the URL below using a web browser:
+And use a web browser to connect to score's root REST endpoint:
 		http://127.0.0.1:9000/
